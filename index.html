@@ -701,6 +701,137 @@ body {
   </div>
 </div>
 
+<!-- ADMIN FLOATING BUTTON -->
+<button id="admin-fab" title="Administrar cumpleaños">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+</button>
+
+<!-- ADMIN MODAL -->
+<div class="overlay" id="admin-modal" hidden>
+  <div class="modal admin-box">
+    <div class="admin-head">
+      <div class="modal-name">Administrar</div>
+      <button class="month-modal-close" id="admin-close" style="background:var(--surface2)">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke="var(--fg)"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Token -->
+    <div class="admin-token" id="admin-token-box">
+      <div class="admin-token-status" id="admin-token-status"></div>
+      <div id="admin-token-form">
+        <input type="password" id="admin-token-input" placeholder="Pega aquí tu token de GitHub" autocomplete="off">
+        <div class="admin-token-actions">
+          <button class="mbt mbt-cp" id="admin-token-save">Guardar token</button>
+          <button class="mbt" id="admin-token-clear" hidden>Olvidar token</button>
+        </div>
+        <div class="admin-help">
+          El token se guarda solo en este dispositivo. Necesita permiso <b>Contents: Read&nbsp;and&nbsp;write</b> en el repo <b>birthdays</b>.
+        </div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="admin-form" id="admin-form">
+      <div class="admin-form-title" id="admin-form-title">Añadir persona</div>
+      <div class="admin-grid">
+        <label>Nombre<input type="text" id="f-name" placeholder="Nombre completo"></label>
+        <label>Apodo<input type="text" id="f-nick" placeholder="Apodo"></label>
+        <label>Fecha<input type="date" id="f-date"></label>
+        <label>Teléfono<input type="text" id="f-phone" placeholder="57300... (opcional)"></label>
+        <label>Relación
+          <select id="f-relation">
+            <option value="default">Otro (genérico)</option>
+            <option value="yo">Yo</option>
+            <option value="madre">Madre</option>
+            <option value="padre">Padre</option>
+            <option value="pareja">Pareja</option>
+            <option value="hermana">Hermana/o</option>
+            <option value="primo">Primo/a</option>
+            <option value="abuela">Abuela/o</option>
+            <option value="sobrina">Sobrino/a</option>
+          </select>
+        </label>
+        <label class="admin-noyear"><input type="checkbox" id="f-noyear"> Sin año (no mostrar edad)</label>
+      </div>
+      <div class="admin-form-btns">
+        <button class="mbt" id="admin-form-cancel" hidden>Cancelar edición</button>
+        <button class="mbt mbt-cp" id="admin-form-save">Guardar persona</button>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div class="admin-list" id="admin-list"></div>
+
+    <div class="admin-status" id="admin-status"></div>
+  </div>
+</div>
+
+<style>
+#admin-fab {
+  position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom,0px));
+  width: 52px; height: 52px; border-radius: 50%; z-index: 200;
+  background: var(--c2); color: #fff; border: none; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .15s;
+}
+#admin-fab:hover { transform: scale(1.08); }
+#admin-fab svg { width: 24px; height: 24px; }
+.admin-box { max-width: 520px; max-height: 88vh; overflow-y: auto; gap: 16px; }
+.admin-head { display: flex; align-items: center; justify-content: space-between; }
+.admin-head .modal-name { font-family: 'Fredoka One', cursive; font-size: 1.2rem; }
+
+.admin-token { background: var(--surface2); border-radius: 14px; padding: 14px; }
+.admin-token-status { font-size: .85rem; font-weight: 800; margin-bottom: 8px; }
+.admin-token-status.ok  { color: #4CAF50; }
+.admin-token-status.off { color: var(--fg-muted); }
+#admin-token-input {
+  width: 100%; background: var(--surface); border: 2px solid var(--border);
+  border-radius: 10px; padding: 10px 12px; color: var(--fg);
+  font-family: 'Nunito', sans-serif; font-size: .85rem; outline: none;
+}
+#admin-token-input:focus { border-color: var(--c1); }
+.admin-token-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.admin-help { font-size: .72rem; color: var(--fg-muted); margin-top: 8px; line-height: 1.5; }
+
+.admin-form { border: 2px solid var(--border); border-radius: 14px; padding: 14px; }
+.admin-form-title { font-weight: 800; font-size: .95rem; margin-bottom: 10px; }
+.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.admin-grid label { display: flex; flex-direction: column; gap: 4px; font-size: .72rem; font-weight: 800; color: var(--fg-muted); }
+.admin-grid input, .admin-grid select {
+  background: var(--surface2); border: 2px solid var(--border); border-radius: 10px;
+  padding: 9px 10px; color: var(--fg); font-family: 'Nunito', sans-serif; font-size: .85rem; outline: none;
+}
+.admin-grid input:focus, .admin-grid select:focus { border-color: var(--c1); }
+.admin-noyear { grid-column: 1 / -1; flex-direction: row !important; align-items: center; gap: 8px !important; font-size: .78rem !important; color: var(--fg) !important; }
+.admin-noyear input { width: auto; }
+.admin-form-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; }
+
+.admin-list { display: flex; flex-direction: column; gap: 6px; }
+.admin-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2); border-radius: 12px; padding: 10px 12px;
+}
+.admin-row-av { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Fredoka One', cursive; color: #fff; font-size: .95rem; }
+.admin-row-info { flex: 1; min-width: 0; }
+.admin-row-name { font-weight: 800; font-size: .85rem; }
+.admin-row-sub { font-size: .72rem; color: var(--fg-muted); }
+.admin-row-btn { border: none; background: none; cursor: pointer; padding: 6px; border-radius: 8px; color: var(--fg-muted); }
+.admin-row-btn:hover { background: var(--surface); color: var(--fg); }
+.admin-row-btn svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; }
+.admin-row-btn.del:hover { color: #FF5722; }
+
+.admin-status { font-size: .8rem; font-weight: 700; text-align: center; min-height: 1.2em; }
+.admin-status.ok  { color: #4CAF50; }
+.admin-status.err { color: #FF5722; }
+.admin-status.wait{ color: var(--c4); }
+.admin-disabled { opacity: .45; pointer-events: none; }
+</style>
+
 <script>
 /* ═══════════════════════════════════════
    DATA
@@ -709,18 +840,9 @@ const PALETTE = ['#E91E8C','#9C27B0','#00BCD4','#FFC107','#4CAF50','#FF5722','#3
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DAYS_ES   = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 
-// 'date' acepta 'AAAA-MM-DD' (muestra la edad que cumple) o 'MM-DD' (sin año = sin edad).
-// Los años de abajo son EJEMPLOS: edítalos con los años reales de nacimiento. ⬅️
-const BIRTHDAYS = [
-  { name:'Miguel Zambrano', nickname:'Mono',     date:'1995-10-15', phone:'573001234567', relation:'yo' },
-  { name:'Mamá',            nickname:'Mamá',     date:'1968-03-15', phone:'',            relation:'madre' },
-  { name:'Papá',            nickname:'Pacho',    date:'1965-06-22', phone:'573109876543', relation:'padre' },
-  { name:'Esposa',          nickname:'Amor',     date:'1996-11-03', phone:'573201234567', relation:'pareja' },
-  { name:'Laura Zambrano',  nickname:'Lau',      date:'1998-12-05', phone:'',            relation:'hermana' },
-  { name:'Carlos Herrera',  nickname:'Carlitos', date:'1994-01-18', phone:'573151234567', relation:'primo' },
-  { name:'Abuela Rosa',     nickname:'Abue',     date:'1945-07-30', phone:'',            relation:'abuela' },
-  { name:'Daniela Prado',   nickname:'Dani',     date:'2010-10-28', phone:'573001119999', relation:'sobrina' },
-];
+// Los cumpleaños viven en data.json (se cargan al iniciar). 'date' acepta
+// 'AAAA-MM-DD' (muestra la edad) o 'MM-DD' (sin año = sin edad).
+let BIRTHDAYS = [];
 
 const MSGS = {
   yo:      (n,k) => `¡Feliz cumpleaños para mí, el ${k}! 🎂🥳 Este año va a ser épico. ¡A celebrar!`,
@@ -888,11 +1010,16 @@ function stopCelebration() {
 }
 
 /* ═══════════════════════════════════════
-   SORTED DATA
+   SORTED DATA (se recalcula al cargar/editar)
 ═══════════════════════════════════════ */
-const sorted = [...BIRTHDAYS]
-  .map(p => ({...p, days:getDays(p.date), today:isToday(p.date)}))
-  .sort((a,b) => a.days - b.days);
+let sorted = [];
+let N = 0;
+function computeSorted() {
+  sorted = [...BIRTHDAYS]
+    .map(p => ({...p, days:getDays(p.date), today:isToday(p.date)}))
+    .sort((a,b) => a.days - b.days);
+  N = sorted.length;
+}
 
 /* ═══════════════════════════════════════
    HEADER
@@ -906,13 +1033,16 @@ const sorted = [...BIRTHDAYS]
 /* ═══════════════════════════════════════
    BIRTHDAY BANNER + CELEBRATION
 ═══════════════════════════════════════ */
-const todayPeople = sorted.filter(p => p.today);
-if (todayPeople.length) {
-  const names = todayPeople.map(p => `${p.nickname}`).join(' y ');
-  document.getElementById('banner-title').textContent = `¡Hoy cumple ${names}! 🎂`;
-  document.getElementById('bday-banner').hidden = false;
-  // Launch Three.js after a small delay
-  setTimeout(launchCelebration, 800);
+function buildBanner() {
+  const todayPeople = sorted.filter(p => p.today);
+  if (todayPeople.length) {
+    const names = todayPeople.map(p => `${p.nickname}`).join(' y ');
+    document.getElementById('banner-title').textContent = `¡Hoy cumple ${names}! 🎂`;
+    document.getElementById('bday-banner').hidden = false;
+    setTimeout(launchCelebration, 800);
+  } else {
+    document.getElementById('bday-banner').hidden = true;
+  }
 }
 
 /* ═══════════════════════════════════════
@@ -922,7 +1052,6 @@ let cur = 0;
 const deckWrap = document.getElementById('deck-wrap');
 const dotsEl   = document.getElementById('deck-dots');
 const counter  = document.getElementById('deck-counter');
-const N = sorted.length;
 
 function buildDeck() {
   deckWrap.innerHTML = '';
@@ -1045,12 +1174,10 @@ deckWrap.addEventListener('pointercancel', ()=>{
   refreshDeck();
 });
 
-buildDeck();
-
 /* ═══════════════════════════════════════
    LIST VIEW
 ═══════════════════════════════════════ */
-(()=>{
+function buildList() {
   const el = document.getElementById('up-list');
   el.innerHTML = sorted.map(p => {
     const col = colorFor(p.name);
@@ -1071,7 +1198,7 @@ buildDeck();
       </button>
     </div>`;
   }).join('');
-})();
+}
 
 /* ═══════════════════════════════════════
    CALENDAR VIEW
@@ -1137,7 +1264,7 @@ const dowHeaderHTML = DOW_ES.map(d => `<div class="mini-dow">${d}</div>`).join('
 /* ═══════════════════════════════════════
    CALENDAR VIEW: mes actual destacado + resto en grid
 ═══════════════════════════════════════ */
-(()=>{
+function buildCalendar() {
   const now = new Date();
   const year = now.getFullYear();
   const curMi = now.getMonth();
@@ -1189,7 +1316,7 @@ const dowHeaderHTML = DOW_ES.map(d => `<div class="mini-dow">${d}</div>`).join('
       <div class="cal-body">${rows}</div>
     </div>`;
   }).join('');
-})();
+}
 
 /* ═══════════════════════════════════════
    MONTH MODAL (otros meses)
@@ -1285,6 +1412,215 @@ document.getElementById('btn-copy').onclick = async () => {
 /* tap banner para relanzar celebración */
 document.getElementById('bday-banner').addEventListener('click', () => {
   stopCelebration(); setTimeout(launchCelebration, 100);
+});
+
+/* ═══════════════════════════════════════
+   RENDER + CARGA DE DATOS (data.json)
+═══════════════════════════════════════ */
+function renderData() {
+  computeSorted();
+  cur = 0;
+  buildBanner();
+  buildDeck();
+  buildList();
+  buildCalendar();
+}
+
+async function loadData() {
+  try {
+    const res = await fetch('./data.json', { cache: 'no-store' });
+    if (res.ok) return await res.json();
+  } catch {}
+  try { const r = await fetch('./data.json'); if (r.ok) return await r.json(); } catch {}
+  return [];
+}
+
+/* ═══════════════════════════════════════
+   ADMIN: edición vía API de GitHub
+═══════════════════════════════════════ */
+const GH = { owner: 'Devmiguelz', repo: 'birthdays', path: 'data.json', branch: 'main' };
+const TOKEN_KEY = 'gh_token_birthdays';
+
+const $ = id => document.getElementById(id);
+const getToken = () => { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; } };
+const setToken = t => { try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch {} };
+
+// base64 seguro para UTF-8 (acentos, emojis)
+const b64 = str => btoa(unescape(encodeURIComponent(str)));
+
+function adminStatus(msg, cls='') {
+  const el = $('admin-status');
+  el.textContent = msg; el.className = 'admin-status ' + cls;
+}
+
+async function ghGetSha(token) {
+  const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}?ref=${GH.branch}`,
+    { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } });
+  if (r.status === 404) return null;
+  if (r.status === 401) throw new Error('Token inválido o sin permiso.');
+  if (!r.ok) throw new Error('No se pudo leer el archivo (' + r.status + ').');
+  return (await r.json()).sha;
+}
+
+async function ghSave(token, arr) {
+  const sha = await ghGetSha(token);
+  const body = {
+    message: 'Actualiza cumpleaños desde la app',
+    content: b64(JSON.stringify(arr, null, 2) + '\n'),
+    branch: GH.branch
+  };
+  if (sha) body.sha = sha;
+  const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (r.status === 401 || r.status === 403) throw new Error('Token sin permiso de escritura.');
+  if (!r.ok) throw new Error('Error al guardar (' + r.status + ').');
+  return true;
+}
+
+async function commit(newArr) {
+  const token = getToken();
+  if (!token) { adminStatus('Primero guarda tu token.', 'err'); return; }
+  adminStatus('Guardando…', 'wait');
+  try {
+    await ghSave(token, newArr);
+    BIRTHDAYS = newArr;
+    renderData();
+    renderAdminList();
+    resetForm();
+    adminStatus('✓ Guardado. Se publicará en ~1 min.', 'ok');
+  } catch (e) {
+    adminStatus('⚠️ ' + e.message, 'err');
+  }
+}
+
+/* ── Token UI ── */
+function updateTokenUI() {
+  const t = getToken();
+  const st = $('admin-token-status');
+  if (t) {
+    st.textContent = 'Conectado ✓ — modo edición'; st.className = 'admin-token-status ok';
+    $('admin-token-input').value = ''; $('admin-token-input').placeholder = 'Token guardado (pega otro para reemplazar)';
+    $('admin-token-clear').hidden = false;
+    $('admin-form').classList.remove('admin-disabled');
+    $('admin-list').classList.remove('admin-disabled');
+  } else {
+    st.textContent = 'Sin token — solo lectura'; st.className = 'admin-token-status off';
+    $('admin-token-clear').hidden = true;
+    $('admin-form').classList.add('admin-disabled');
+    $('admin-list').classList.add('admin-disabled');
+  }
+}
+
+$('admin-token-save').onclick = () => {
+  const v = $('admin-token-input').value.trim();
+  if (!v) { adminStatus('Pega un token.', 'err'); return; }
+  setToken(v); updateTokenUI(); adminStatus('Token guardado en este dispositivo.', 'ok');
+};
+$('admin-token-clear').onclick = () => {
+  setToken(''); updateTokenUI(); adminStatus('Token olvidado.', '');
+};
+
+/* ── Formulario (añadir / editar) ── */
+let editIndex = -1;
+
+function resetForm() {
+  editIndex = -1;
+  $('admin-form-title').textContent = 'Añadir persona';
+  $('f-name').value = ''; $('f-nick').value = ''; $('f-date').value = '';
+  $('f-phone').value = ''; $('f-relation').value = 'default'; $('f-noyear').checked = false;
+  $('admin-form-cancel').hidden = true;
+}
+
+function fillForm(i) {
+  const p = BIRTHDAYS[i];
+  editIndex = i;
+  $('admin-form-title').textContent = 'Editar: ' + p.name;
+  $('f-name').value = p.name;
+  $('f-nick').value = p.nickname || '';
+  $('f-phone').value = p.phone || '';
+  $('f-relation').value = p.relation || 'default';
+  const d = parseDate(p.date);
+  if (d.year) { $('f-noyear').checked = false; $('f-date').value = p.date; }
+  else { $('f-noyear').checked = true; $('f-date').value = `2000-${String(d.month).padStart(2,'0')}-${String(d.day).padStart(2,'0')}`; }
+  $('admin-form-cancel').hidden = false;
+  $('admin-form').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function readForm() {
+  const name = $('f-name').value.trim();
+  if (!name) { adminStatus('El nombre es obligatorio.', 'err'); return null; }
+  const dval = $('f-date').value;
+  if (!dval) { adminStatus('La fecha es obligatoria.', 'err'); return null; }
+  const date = $('f-noyear').checked ? dval.slice(5) : dval;  // MM-DD o AAAA-MM-DD
+  return {
+    name,
+    nickname: $('f-nick').value.trim() || name.split(' ')[0],
+    date,
+    phone: $('f-phone').value.replace(/[^0-9]/g, ''),
+    relation: $('f-relation').value
+  };
+}
+
+$('admin-form-save').onclick = () => {
+  if (!getToken()) { adminStatus('Primero guarda tu token.', 'err'); return; }
+  const person = readForm();
+  if (!person) return;
+  const arr = BIRTHDAYS.slice();
+  if (editIndex >= 0) arr[editIndex] = person; else arr.push(person);
+  commit(arr);
+};
+$('admin-form-cancel').onclick = resetForm;
+
+/* ── Lista admin ── */
+function renderAdminList() {
+  $('admin-list').innerHTML = BIRTHDAYS.map((p, i) => `
+    <div class="admin-row">
+      <div class="admin-row-av" style="background:${colorFor(p.name)}">${ini(p.name)}</div>
+      <div class="admin-row-info">
+        <div class="admin-row-name">${p.name}</div>
+        <div class="admin-row-sub">"${p.nickname}" · ${fmtDate(p.date)}</div>
+      </div>
+      <button class="admin-row-btn" data-edit="${i}" title="Editar">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
+      <button class="admin-row-btn del" data-del="${i}" title="Borrar">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>`).join('');
+}
+
+$('admin-list').addEventListener('click', e => {
+  const eBtn = e.target.closest('[data-edit]');
+  const dBtn = e.target.closest('[data-del]');
+  if (eBtn) { fillForm(+eBtn.dataset.edit); return; }
+  if (dBtn) {
+    const i = +dBtn.dataset.del;
+    if (confirm('¿Borrar a ' + BIRTHDAYS[i].name + '?')) {
+      const arr = BIRTHDAYS.slice(); arr.splice(i, 1); commit(arr);
+    }
+  }
+});
+
+/* ── Abrir / cerrar admin ── */
+$('admin-fab').onclick = () => {
+  updateTokenUI(); renderAdminList(); resetForm(); adminStatus('');
+  $('admin-modal').hidden = false;
+  if (typeof gsap !== 'undefined') gsap.fromTo('.admin-box', { y:40, opacity:0 }, { y:0, opacity:1, duration:.3, ease:'back.out(1.3)' });
+};
+$('admin-close').onclick = () => { $('admin-modal').hidden = true; };
+$('admin-modal').addEventListener('click', e => {
+  if (e.target === $('admin-modal')) $('admin-modal').hidden = true;
+});
+
+/* ═══════════════════════════════════════
+   ARRANQUE
+═══════════════════════════════════════ */
+loadData().then(data => {
+  BIRTHDAYS = Array.isArray(data) ? data : [];
+  renderData();
 });
 </script>
 
