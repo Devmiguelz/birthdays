@@ -3,56 +3,48 @@
     "name": "Miguel Zambrano",
     "nickname": "Mono",
     "date": "1995-10-14",
-    "phone": "573001234567",
-    "relation": "yo"
+    "phone": "573001234567"
   },
   {
     "name": "Mamá",
     "nickname": "Mamá",
     "date": "1968-03-15",
-    "phone": "",
-    "relation": "madre"
+    "phone": ""
   },
   {
     "name": "Papá",
     "nickname": "Pacho",
     "date": "1965-06-22",
-    "phone": "573109876543",
-    "relation": "padre"
+    "phone": "573109876543"
   },
   {
     "name": "Esposa",
     "nickname": "Amor",
     "date": "1996-11-03",
-    "phone": "573201234567",
-    "relation": "pareja"
+    "phone": "573201234567"
   },
   {
     "name": "Laura Zambrano",
     "nickname": "Lau",
     "date": "1998-12-05",
-    "phone": "",
-    "relation": "hermana"
+    "phone": ""
   },
   {
     "name": "Carlos Herrera",
     "nickname": "Carlitos",
     "date": "1994-01-18",
-    "phone": "573151234567",
-    "relation": "primo"
+    "phone": "573151234567"
   },
   {
     "name": "Abuela Rosa",
     "nickname": "Abue",
     "date": "1945-07-30",
-    "phone": "",
-    "relation": "abuela"
+    "phone": ""
   },
   {
     "name": "Daniela Prado",
     "nickname": "Dani",
     "date": "2010-10-28",
-    "phone": "573001119999",
-    "relation": "sobrina"
+    "phone": "573001119999"
   }
 ]
