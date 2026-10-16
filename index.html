@@ -803,9 +803,10 @@ body {
 .admin-token-status.ok  { color: #4CAF50; }
 .admin-token-status.off { color: var(--fg-muted); }
 #admin-token-input {
-  width: 100%; background: var(--surface); border: 2px solid var(--border);
+  width: 100%; max-width: 100%; box-sizing: border-box;
+  background: var(--surface); border: 2px solid var(--border);
   border-radius: 10px; padding: 10px 12px; color: var(--fg);
-  font-family: 'Nunito', sans-serif; font-size: .85rem; outline: none;
+  font-family: 'Nunito', sans-serif; font-size: 16px; outline: none;
 }
 #admin-token-input:focus { border-color: var(--c1); }
 .admin-token-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
@@ -814,10 +815,16 @@ body {
 .admin-form { border: 2px solid var(--border); border-radius: 14px; padding: 14px; }
 .admin-form-title { font-weight: 800; font-size: .95rem; margin-bottom: 10px; }
 .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.admin-grid label { display: flex; flex-direction: column; gap: 4px; font-size: .72rem; font-weight: 800; color: var(--fg-muted); }
+.admin-grid label { display: flex; flex-direction: column; gap: 4px; font-size: .72rem; font-weight: 800; color: var(--fg-muted); min-width: 0; }
 .admin-grid input, .admin-grid select {
+  width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
   background: var(--surface2); border: 2px solid var(--border); border-radius: 10px;
-  padding: 9px 10px; color: var(--fg); font-family: 'Nunito', sans-serif; font-size: .85rem; outline: none;
+  padding: 9px 10px; color: var(--fg); font-family: 'Nunito', sans-serif; font-size: 16px; outline: none;
+  -webkit-appearance: none; appearance: none;
+}
+.admin-grid input[type="date"] { -webkit-appearance: none; min-height: 40px; }
+@media (max-width: 440px) {
+  .admin-grid { grid-template-columns: 1fr; }
 }
 .admin-grid input:focus, .admin-grid select:focus { border-color: var(--c1); }
 .admin-noyear { grid-column: 1 / -1; flex-direction: row !important; align-items: center; gap: 8px !important; font-size: .78rem !important; color: var(--fg) !important; }
