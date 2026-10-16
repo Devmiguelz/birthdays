@@ -2,7 +2,7 @@
 
 App web (PWA) para no olvidar nunca un cumpleaños de la familia. Muestra los próximos cumpleaños en tarjetas, lista y calendario, calcula la edad que cumple cada persona y genera un mensaje de felicitación listo para enviar por WhatsApp.
 
-🔗 **En vivo:** https://devmiguelz.github.io/cumpleanos/
+🔗 **En vivo:** https://devmiguelz.github.io/birthdays/
 
 ## ✨ Características
 
