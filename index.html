@@ -1,0 +1,1291 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Cumpleaños Familia</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap">
+
+<!-- ── ICONO (globos) + PWA ── -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20512%20512'%3E%3Crect%20width='512'%20height='512'%20rx='112'%20fill='%231A1530'/%3E%3Cg%20fill='none'%20stroke='%23F0EAF8'%20stroke-width='7'%20stroke-linecap='round'%20opacity='.75'%3E%3Cpath%20d='M258%20330%20Q252%20385%20256%20432'/%3E%3Cpath%20d='M188%20286%20Q212%20372%20256%20432'/%3E%3Cpath%20d='M324%20240%20Q300%20345%20256%20432'/%3E%3C/g%3E%3Cellipse%20cx='258'%20cy='250'%20rx='66'%20ry='80'%20fill='%23FFC107'/%3E%3Cpath%20d='M248%20327%20L268%20327%20L258%20347Z'%20fill='%23FFC107'/%3E%3Cellipse%20cx='238'%20cy='226'%20rx='17'%20ry='26'%20fill='%23fff'%20opacity='.3'/%3E%3Cellipse%20cx='188'%20cy='190'%20rx='80'%20ry='96'%20fill='%23E91E8C'/%3E%3Cpath%20d='M176%20283%20L200%20283%20L188%20305Z'%20fill='%23E91E8C'/%3E%3Cellipse%20cx='160'%20cy='160'%20rx='21'%20ry='33'%20fill='%23fff'%20opacity='.28'/%3E%3Cellipse%20cx='324'%20cy='150'%20rx='74'%20ry='90'%20fill='%2300BCD4'/%3E%3Cpath%20d='M313%20237%20L335%20237%20L324%20258Z'%20fill='%2300BCD4'/%3E%3Cellipse%20cx='300'%20cy='122'%20rx='19'%20ry='29'%20fill='%23fff'%20opacity='.28'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#2D1B69">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cumpleaños">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+
+<!-- ── PWA: manifest + iconos + service worker (todo autocontenido) ── -->
+<script>
+(function () {
+  const SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#1A1530"/><g fill="none" stroke="#F0EAF8" stroke-width="7" stroke-linecap="round" opacity=".75"><path d="M258 330 Q252 385 256 432"/><path d="M188 286 Q212 372 256 432"/><path d="M324 240 Q300 345 256 432"/></g><ellipse cx="258" cy="250" rx="66" ry="80" fill="#FFC107"/><path d="M248 327 L268 327 L258 347Z" fill="#FFC107"/><ellipse cx="238" cy="226" rx="17" ry="26" fill="#fff" opacity=".3"/><ellipse cx="188" cy="190" rx="80" ry="96" fill="#E91E8C"/><path d="M176 283 L200 283 L188 305Z" fill="#E91E8C"/><ellipse cx="160" cy="160" rx="21" ry="33" fill="#fff" opacity=".28"/><ellipse cx="324" cy="150" rx="74" ry="90" fill="#00BCD4"/><path d="M313 237 L335 237 L324 258Z" fill="#00BCD4"/><ellipse cx="300" cy="122" rx="19" ry="29" fill="#fff" opacity=".28"/></svg>`;
+  const svgHref = 'data:image/svg+xml,' + encodeURIComponent(SVG);
+
+  // Rasteriza el SVG a PNG (mejor compatibilidad en iOS/Android)
+  function png(size) {
+    return new Promise(res => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = c.height = size;
+        const x = c.getContext('2d');
+        x.drawImage(img, 0, 0, size, size);
+        try { res(c.toDataURL('image/png')); } catch { res(null); }
+      };
+      img.onerror = () => res(null);
+      img.src = svgHref;
+    });
+  }
+
+  Promise.all([png(192), png(512), png(180), png(64)]).then(([p192, p512, p180, p64]) => {
+    // Icono de la pestaña del navegador (PNG = compatibilidad garantizada)
+    if (p64) {
+      document.querySelectorAll('link[rel~="icon"]').forEach(n => n.remove());
+      const fav = document.createElement('link');
+      fav.rel = 'icon'; fav.type = 'image/png'; fav.href = p64;
+      document.head.appendChild(fav);
+    }
+    // Icono para "Añadir a pantalla de inicio" en iOS
+    if (p180) {
+      const al = document.createElement('link');
+      al.rel = 'apple-touch-icon'; al.href = p180;
+      document.head.appendChild(al);
+    }
+    const icons = [];
+    if (p192) icons.push({ src: p192, sizes: '192x192', type: 'image/png', purpose: 'any' });
+    if (p512) icons.push({ src: p512, sizes: '512x512', type: 'image/png', purpose: 'any' });
+    if (p512) icons.push({ src: p512, sizes: '512x512', type: 'image/png', purpose: 'maskable' });
+    icons.push({ src: svgHref, sizes: 'any', type: 'image/svg+xml' });
+
+    const manifest = {
+      name: 'Cumpleaños Familia',
+      short_name: 'Cumpleaños',
+      description: 'Cumpleaños de la familia',
+      start_url: '.',
+      scope: '.',
+      display: 'standalone',
+      orientation: 'portrait',
+      background_color: '#0D0A18',
+      theme_color: '#2D1B69',
+      icons
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }));
+    const ml = document.createElement('link');
+    ml.rel = 'manifest'; ml.href = url;
+    document.head.appendChild(ml);
+  });
+
+  // Service worker: solo cuando se sirve por http(s), no con file://
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+})();
+</script>
+
+<style>
+:root {
+  --c1: #E91E8C; --c2: #9C27B0; --c3: #00BCD4;
+  --c4: #FFC107; --c5: #4CAF50; --c6: #FF5722;
+  --c7: #3F51B5; --c8: #009688;
+  --bg:      #0D0A18;
+  --surface: #1A1530;
+  --surface2:#231E3A;
+  --fg:      #F0EAF8;
+  --fg-muted:#9A88B8;
+  --border:  #2E2445;
+  --radius:  22px;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:      #F4F0FF;
+    --surface: #FFFFFF;
+    --surface2:#F0EBFF;
+    --fg:      #1A1226;
+    --fg-muted:#7A6E8A;
+    --border:  #E0D8F0;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg:      #F4F0FF;
+  --surface: #FFFFFF;
+  --surface2:#F0EBFF;
+  --fg:      #1A1226;
+  --fg-muted:#7A6E8A;
+  --border:  #E0D8F0;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Nunito', sans-serif;
+  overflow-x: hidden;
+  padding-left: max(0px, env(safe-area-inset-left, 0px));
+  padding-right: max(0px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+}
+
+/* ── THREE.JS CANVAS ── */
+#three-canvas {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none; opacity: 0;
+  transition: opacity .6s;
+}
+#three-canvas.visible { opacity: 1; }
+
+/* ── HEADER ── */
+.app-header {
+  position: relative; z-index: 2;
+  background: linear-gradient(145deg, #2D1B69 0%, #1A0A3A 60%);
+  padding: 32px max(20px, env(safe-area-inset-left, 0px)) 90px;
+  overflow: hidden;
+}
+.header-glow {
+  position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+  width: 400px; height: 300px;
+  background: radial-gradient(ellipse, rgba(233,30,140,.35) 0%, transparent 70%);
+  pointer-events: none;
+}
+.header-inner {
+  position: relative; max-width: 640px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header-brand {
+  display: flex; align-items: center; gap: 12px;
+}
+.brand-icon {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(233,30,140,.4);
+}
+.app-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(1.3rem, 4vw, 1.7rem);
+  color: #fff; letter-spacing: .01em;
+}
+.header-date-pill {
+  background: rgba(255,255,255,.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 100px;
+  padding: 6px 14px;
+  font-size: .75rem; font-weight: 700; color: rgba(255,255,255,.85);
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex; gap: 8px;
+  max-width: 640px; margin: -42px auto 0;
+  padding: 0 max(16px, env(safe-area-inset-left, 0px));
+  position: relative; z-index: 10;
+}
+.tab {
+  flex: 1; background: var(--surface);
+  border: none; border-radius: 16px;
+  padding: 12px 6px;
+  font-family: 'Nunito', sans-serif; font-size: .72rem; font-weight: 800;
+  color: var(--fg-muted); cursor: pointer;
+  transition: all .2s;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25);
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+}
+.tab svg { width: 22px; height: 22px; }
+.tab.active { background: var(--c1); color: #fff; }
+.tab.active svg { stroke: #fff; fill: none; }
+.tab:not(.active) svg { stroke: var(--fg-muted); fill: none; }
+
+/* ── VIEWS ── */
+.view { display: none; padding: 24px max(16px, env(safe-area-inset-left, 0px)) 0; max-width: 640px; margin: 0 auto; }
+.view.active { display: block; }
+
+/* ── BIRTHDAY BANNER (hoy) ── */
+.bday-banner {
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  border-radius: 20px; padding: 20px 22px;
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(233,30,140,.35);
+  animation: bannerPulse 2s ease-in-out infinite;
+}
+@keyframes bannerPulse {
+  0%,100% { box-shadow: 0 8px 32px rgba(233,30,140,.35); }
+  50%      { box-shadow: 0 8px 48px rgba(233,30,140,.6); }
+}
+.bday-banner[hidden] { display: none !important; }
+.banner-icon-wrap {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(255,255,255,.2);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.banner-text { flex: 1; }
+.banner-title { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: #fff; }
+.banner-sub { font-size: .8rem; color: rgba(255,255,255,.8); }
+
+/* ── SWIPE CARDS ── */
+.swipe-label {
+  font-size: .7rem; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--fg-muted);
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.swipe-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.deck-wrap {
+  position: relative;
+  height: 320px;
+  margin-bottom: 18px;
+}
+.s-card {
+  position: absolute; inset: 0;
+  border-radius: 28px; padding: 28px 26px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  color: #fff;
+  will-change: transform;
+  box-shadow: 0 12px 40px rgba(0,0,0,.35);
+  overflow: hidden;
+  touch-action: none;
+}
+/* orb decorativo */
+.s-card-orb1, .s-card-orb2 {
+  position: absolute; border-radius: 50%;
+  background: rgba(255,255,255,.12); pointer-events: none;
+}
+.s-card-orb1 { width: 180px; height: 180px; top: -50px; right: -50px; }
+.s-card-orb2 { width: 260px; height: 260px; bottom: -100px; left: -80px; background: rgba(255,255,255,.07); }
+
+.s-card-top { display: flex; align-items: flex-start; justify-content: space-between; position: relative; z-index: 1; }
+.s-avatar {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: rgba(255,255,255,.22);
+  border: 2.5px solid rgba(255,255,255,.45);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fredoka One', cursive; font-size: 1.6rem; color: #fff;
+}
+.s-days-pill {
+  background: rgba(255,255,255,.22);
+  border: 1px solid rgba(255,255,255,.3);
+  backdrop-filter: blur(6px);
+  border-radius: 100px;
+  padding: 5px 14px;
+  font-size: .78rem; font-weight: 800;
+}
+
+.s-card-bottom { position: relative; z-index: 1; }
+.s-name {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(1.5rem, 5vw, 1.9rem); line-height: 1.1; margin-bottom: 2px;
+}
+.s-nick { font-size: .88rem; opacity: .8; font-weight: 600; margin-bottom: 4px; }
+.s-date-row { font-size: .8rem; opacity: .7; display: flex; align-items: center; gap: 6px; }
+
+.s-actions { display: flex; gap: 8px; margin-top: 14px; }
+.s-btn {
+  background: rgba(255,255,255,.18);
+  border: 1.5px solid rgba(255,255,255,.3);
+  border-radius: 12px; color: #fff;
+  padding: 8px 16px;
+  font-family: 'Nunito', sans-serif; font-size: .78rem; font-weight: 800;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  backdrop-filter: blur(4px); transition: background .15s; text-decoration: none;
+}
+.s-btn:hover { background: rgba(255,255,255,.32); }
+.s-btn svg { width: 15px; height: 15px; fill: currentColor; flex-shrink: 0; }
+
+/* Nav arrows */
+.deck-nav {
+  display: flex; justify-content: center; align-items: center; gap: 20px;
+  margin-bottom: 8px;
+}
+.nav-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--border);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all .2s; color: var(--fg-muted);
+}
+.nav-btn:hover { background: var(--c1); border-color: var(--c1); color: #fff; }
+.nav-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+.deck-counter {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1rem; color: var(--fg-muted);
+  min-width: 60px; text-align: center;
+}
+.deck-dots {
+  display: flex; gap: 5px; justify-content: center; margin-top: 6px;
+}
+.ddot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all .25s;
+}
+.ddot.on { width: 22px; border-radius: 3px; background: var(--c1); }
+
+/* ── LIST VIEW ── */
+.up-list { display: flex; flex-direction: column; gap: 10px; }
+.up-item {
+  background: var(--surface); border-radius: 16px;
+  padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+  border: 2px solid var(--border);
+  transition: transform .15s, border-color .15s; cursor: default;
+}
+.up-item:hover { transform: translateX(4px); border-color: var(--c1); }
+.up-av {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fredoka One', cursive; font-size: 1.2rem; color: #fff; flex-shrink: 0;
+}
+.up-info { flex: 1; min-width: 0; }
+.up-name { font-weight: 800; font-size: .93rem; }
+.up-age {
+  font-size: .68rem; font-weight: 800; color: var(--c1);
+  background: rgba(233,30,140,.12); border-radius: 100px;
+  padding: 1px 8px; margin-left: 6px; vertical-align: middle;
+}
+.up-nick { font-size: .78rem; color: var(--fg-muted); }
+.up-badge {
+  font-size: .72rem; font-weight: 800; padding: 4px 11px; border-radius: 100px; white-space: nowrap;
+}
+.b-today { background: rgba(76,175,80,.15); color: #4CAF50; }
+.b-soon  { background: rgba(255,193,7,.15); color: #B45309; }
+.b-later { background: var(--surface2); color: var(--fg-muted); }
+.up-msg-btn {
+  width: 34px; height: 34px; border-radius: 10px;
+  border: 2px solid var(--border); background: none;
+  color: var(--fg-muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.up-msg-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+.up-msg-btn:hover { background: var(--c1); border-color: var(--c1); color: #fff; }
+
+/* ── CALENDAR ── */
+.cal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px,1fr)); gap: 12px; }
+.cal-month {
+  background: var(--surface); border-radius: 16px;
+  overflow: hidden; border: 2px solid var(--border);
+  transition: border-color .2s, transform .15s, box-shadow .15s;
+  cursor: pointer;
+}
+.cal-month:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.cal-month.current-month { border-width: 2px; }
+.cal-head {
+  padding: 10px 14px 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: #fff;
+}
+.cal-head svg { width: 16px; height: 16px; fill: rgba(255,255,255,.7); }
+.cal-now-dot {
+  font-size: .6rem; background: rgba(255,255,255,.25);
+  padding: 2px 7px; border-radius: 8px;
+}
+.cal-body { padding: 8px 12px 12px; display: flex; flex-direction: column; gap: 5px; }
+.cal-row { display: flex; align-items: baseline; gap: 7px; font-size: .8rem; }
+.cal-day { font-family: 'Fredoka One', cursive; font-size: .92rem; min-width: 20px; }
+.cal-pname { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-pnick { font-size: .7rem; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-age {
+  margin-left: auto; flex-shrink: 0;
+  font-size: .62rem; font-weight: 800; color: var(--fg-muted);
+  background: var(--surface2); border-radius: 100px; padding: 1px 7px;
+}
+.cal-empty { font-size: .75rem; color: var(--fg-muted); font-weight: 600; }
+
+/* ── FEATURED CURRENT MONTH (inline, top of calendar) ── */
+.cal-featured {
+  background: var(--surface); border-radius: 20px;
+  border: 2px solid var(--border); overflow: hidden;
+  margin-bottom: 22px; box-shadow: 0 8px 28px rgba(0,0,0,.2);
+}
+.cal-featured-head {
+  padding: 16px 20px; color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cal-featured-head .cf-left { display: flex; align-items: baseline; gap: 10px; }
+.cal-featured-title { font-family: 'Fredoka One', cursive; font-size: 1.35rem; }
+.cal-featured-year  { font-size: .85rem; opacity: .8; font-weight: 700; }
+.cal-featured-badge {
+  font-size: .68rem; font-weight: 800; background: rgba(255,255,255,.25);
+  padding: 4px 10px; border-radius: 100px;
+}
+.cal-other-label {
+  font-size: .7rem; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--fg-muted);
+  margin: 0 0 14px; display: flex; align-items: center; gap: 8px;
+}
+.cal-other-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── MONTH MODAL ── */
+.month-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  background: rgba(0,0,0,.65); backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.month-overlay[hidden] { display: none !important; }
+.month-modal {
+  background: var(--surface); border-radius: 24px;
+  width: 100%; max-width: 440px;
+  box-shadow: 0 28px 70px rgba(0,0,0,.5);
+  overflow: hidden;
+}
+.month-modal-head {
+  padding: 20px 22px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  color: #fff;
+}
+.month-modal-title { font-family: 'Fredoka One', cursive; font-size: 1.4rem; }
+.month-modal-year  { font-size: .85rem; opacity: .75; font-weight: 700; }
+.month-modal-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,.2); border: none; color: #fff;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.month-modal-close:hover { background: rgba(255,255,255,.35); }
+.month-modal-close svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5; }
+
+/* mini calendar grid */
+.mini-cal { padding: 4px 16px 16px; }
+.mini-cal-dow {
+  display: grid; grid-template-columns: repeat(7,1fr);
+  margin-bottom: 4px;
+}
+.mini-dow {
+  text-align: center; font-size: .65rem; font-weight: 800;
+  letter-spacing: .05em; color: var(--fg-muted); padding: 4px 0;
+  text-transform: uppercase;
+}
+.mini-cal-days { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+.mini-day {
+  aspect-ratio: 1; border-radius: 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: .8rem; font-weight: 700; position: relative;
+  transition: background .15s;
+}
+.mini-day.empty { opacity: 0; pointer-events: none; }
+.mini-day.today {
+  background: var(--fg); color: var(--bg);
+  font-weight: 800;
+}
+.mini-day.has-bday { cursor: pointer; }
+.mini-day.has-bday:hover { background: var(--surface2); }
+.bday-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+}
+.mini-day-num { line-height: 1; }
+
+/* birthday list in modal */
+.month-bday-list {
+  border-top: 1.5px solid var(--border);
+  margin: 0 16px 16px; border-radius: 14px; overflow: hidden;
+}
+.month-bday-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .15s;
+}
+.month-bday-row:last-child { border-bottom: none; }
+.month-bday-row:hover { background: var(--surface2); }
+.mbr-av {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fredoka One', cursive; font-size: 1rem; color: #fff;
+}
+.mbr-info { flex: 1; min-width: 0; }
+.mbr-name { font-weight: 800; font-size: .88rem; }
+.mbr-date { font-size: .75rem; color: var(--fg-muted); }
+.mbr-day-label {
+  font-size: .7rem; font-weight: 700; padding: 3px 9px; border-radius: 100px;
+  white-space: nowrap;
+}
+.month-no-bdays {
+  padding: 20px 16px; text-align: center;
+  font-size: .85rem; color: var(--fg-muted); font-weight: 600;
+}
+
+/* ── MODAL ── */
+.overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(8px);
+  display: flex; align-items: flex-end; justify-content: center; padding: 16px;
+}
+.overlay[hidden] { display: none !important; }
+.modal {
+  background: var(--surface); border-radius: 26px 26px 20px 20px;
+  padding: 24px 22px 20px;
+  width: 100%; max-width: 500px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.4);
+  display: flex; flex-direction: column; gap: 14px;
+}
+.modal-hd { display: flex; align-items: center; gap: 12px; }
+.modal-av {
+  width: 46px; height: 46px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fredoka One', cursive; font-size: 1.25rem; color: #fff; flex-shrink: 0;
+}
+.modal-name { font-family: 'Fredoka One', cursive; font-size: 1.1rem; }
+.modal-sub  { font-size: .78rem; color: var(--fg-muted); }
+.modal textarea {
+  background: var(--surface2); border: 2px solid var(--border);
+  border-radius: 14px; padding: 12px 14px;
+  color: var(--fg); font-family: 'Nunito', sans-serif;
+  font-size: .88rem; line-height: 1.55;
+  resize: none; width: 100%; min-height: 100px; outline: none;
+}
+.modal textarea:focus { border-color: var(--c1); }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.mbt {
+  font-family: 'Nunito', sans-serif; font-size: .8rem; font-weight: 800;
+  padding: 9px 15px; border-radius: 12px;
+  border: 2px solid var(--border); background: var(--surface2); color: var(--fg);
+  cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; gap: 5px; text-decoration: none;
+}
+.mbt svg { width: 14px; height: 14px; }
+.mbt-wa { background: #25D366; border-color: #25D366; color: #fff; fill: #fff; }
+.mbt-wa:hover { background: #1EBF5A; }
+.mbt-cp { background: var(--c2); border-color: var(--c2); color: #fff; }
+.mbt-cp:hover { opacity: .88; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .s-card, .bday-banner { animation: none !important; transition: none !important; }
+}
+</style>
+
+<!-- Three.js canvas for celebration -->
+<canvas id="three-canvas"></canvas>
+
+<!-- HEADER -->
+<div class="app-header">
+  <div class="header-glow"></div>
+  <div class="header-inner">
+    <div class="header-brand">
+      <div class="brand-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/>
+          <circle cx="12" cy="9" r="2.5" fill="#fff" stroke="none"/>
+          <path d="M8 22h8M10 2c0 0-1-2 2-2s2 2 2 2" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="app-title">Cumpleaños</div>
+    </div>
+    <div class="header-date-pill" id="header-date"></div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" data-view="swipe">
+    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="4" width="14" height="18" rx="3"/>
+      <rect x="8" y="2" width="14" height="18" rx="3"/>
+    </svg>
+    Tarjetas
+  </button>
+  <button class="tab" data-view="list">
+    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="8" y1="6" x2="21" y2="6"/>
+      <line x1="8" y1="12" x2="21" y2="12"/>
+      <line x1="8" y1="18" x2="21" y2="18"/>
+      <circle cx="3" cy="6" r="1.5" fill="currentColor" stroke="none"/>
+      <circle cx="3" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+      <circle cx="3" cy="18" r="1.5" fill="currentColor" stroke="none"/>
+    </svg>
+    Lista
+  </button>
+  <button class="tab" data-view="calendar">
+    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="3"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    Calendario
+  </button>
+</div>
+
+<!-- SWIPE VIEW -->
+<div class="view active" id="view-swipe">
+  <div id="bday-banner" class="bday-banner" hidden>
+    <div class="banner-icon-wrap">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3C9 3 6 5.5 6 9c0 1.5.6 2.9 1.5 4H4l1 9h14l1-9h-3.5C17.4 11.9 18 10.5 18 9c0-3.5-3-6-6-6z"/>
+        <line x1="12" y1="3" x2="12" y2="1"/>
+        <path d="M9 3C9 3 8 1 9.5 1S11 3 11 3"/>
+        <path d="M15 3C15 3 16 1 14.5 1S13 3 13 3"/>
+      </svg>
+    </div>
+    <div class="banner-text">
+      <div class="banner-title" id="banner-title"></div>
+      <div class="banner-sub">¡Hoy es su día especial!</div>
+    </div>
+  </div>
+
+  <div class="swipe-label">Próximos cumpleaños</div>
+  <div class="deck-wrap" id="deck-wrap"></div>
+  <div class="deck-nav">
+    <button class="nav-btn" id="btn-prev" title="Anterior">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="deck-counter" id="deck-counter"></div>
+    <button class="nav-btn" id="btn-next" title="Siguiente">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+  <div class="deck-dots" id="deck-dots"></div>
+</div>
+
+<!-- LIST VIEW -->
+<div class="view" id="view-list">
+  <div class="up-list" id="up-list"></div>
+</div>
+
+<!-- CALENDAR VIEW -->
+<div class="view" id="view-calendar">
+  <div id="cal-featured"></div>
+  <div class="cal-other-label" id="cal-other-label">Otros meses</div>
+  <div class="cal-grid" id="cal-grid"></div>
+</div>
+
+<!-- MONTH MODAL -->
+<div class="month-overlay" id="month-modal" hidden>
+  <div class="month-modal">
+    <div class="month-modal-head" id="mm-head">
+      <div>
+        <div class="month-modal-title" id="mm-title"></div>
+        <div class="month-modal-year" id="mm-year"></div>
+      </div>
+      <button class="month-modal-close" id="mm-close">
+        <svg viewBox="0 0 24 24" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="mini-cal">
+      <div class="mini-cal-dow" id="mm-dow"></div>
+      <div class="mini-cal-days" id="mm-days"></div>
+    </div>
+    <div id="mm-list"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="modal" hidden>
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-av" id="m-av"></div>
+      <div>
+        <div class="modal-name" id="m-name"></div>
+        <div class="modal-sub"  id="m-sub"></div>
+      </div>
+    </div>
+    <textarea id="m-msg" rows="4"></textarea>
+    <div class="modal-btns">
+      <button class="mbt" id="btn-cancel">Cancelar</button>
+      <button class="mbt mbt-cp" id="btn-copy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copiar
+      </button>
+      <a class="mbt mbt-wa" id="btn-wa" href="#" target="_blank">
+        <svg viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   DATA
+═══════════════════════════════════════ */
+const PALETTE = ['#E91E8C','#9C27B0','#00BCD4','#FFC107','#4CAF50','#FF5722','#3F51B5','#009688'];
+const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS_ES   = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+
+// 'date' acepta 'AAAA-MM-DD' (muestra la edad que cumple) o 'MM-DD' (sin año = sin edad).
+// Los años de abajo son EJEMPLOS: edítalos con los años reales de nacimiento. ⬅️
+const BIRTHDAYS = [
+  { name:'Miguel Zambrano', nickname:'Mono',     date:'1995-10-15', phone:'573001234567', relation:'yo' },
+  { name:'Mamá',            nickname:'Mamá',     date:'1968-03-15', phone:'',            relation:'madre' },
+  { name:'Papá',            nickname:'Pacho',    date:'1965-06-22', phone:'573109876543', relation:'padre' },
+  { name:'Esposa',          nickname:'Amor',     date:'1996-11-03', phone:'573201234567', relation:'pareja' },
+  { name:'Laura Zambrano',  nickname:'Lau',      date:'1998-12-05', phone:'',            relation:'hermana' },
+  { name:'Carlos Herrera',  nickname:'Carlitos', date:'1994-01-18', phone:'573151234567', relation:'primo' },
+  { name:'Abuela Rosa',     nickname:'Abue',     date:'1945-07-30', phone:'',            relation:'abuela' },
+  { name:'Daniela Prado',   nickname:'Dani',     date:'2010-10-28', phone:'573001119999', relation:'sobrina' },
+];
+
+const MSGS = {
+  yo:      (n,k) => `¡Feliz cumpleaños para mí, el ${k}! 🎂🥳 Este año va a ser épico. ¡A celebrar!`,
+  madre:   (n,k) => `Mamá, gracias por todo tu amor y dedicación. ¡Que este día esté lleno de alegría! Feliz cumpleaños ❤️`,
+  padre:   (n,k) => `Papá, eres un ejemplo para mí. ¡Feliz cumpleaños! Que la pases increíble hoy 🎉`,
+  pareja:  (n,k) => `Mi amor ${k} 💕, hoy es tu día especial. Que este cumpleaños sea tan bonito como tú. ¡Te amo mucho! 🎂`,
+  hermana: (n,k) => `¡Feliz cumpleaños ${k}! Espero que la pases súper bien hoy. ¡Un abrazo enorme! ❤️`,
+  primo:   (n,k) => `¡Primo ${k}! ¡Feliz cumple! Que todo lo bueno te llegue hoy y siempre 🍻🎂`,
+  abuela:  (n,k) => `${k}, eres lo más especial de la familia. ¡Muchas felicidades en tu día! Con todo mi amor 🌺`,
+  sobrina: (n,k) => `¡Feliz cumpleaños ${k}! Que este año esté lleno de logros y alegrías. ¡Un abrazo enorme! 🤗`,
+  default: (n,k) => `¡Hola ${k}! Hoy es tu día especial. ¡Feliz Cumpleaños! Que la pases genial 🎉`,
+};
+
+/* ═══════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════ */
+// Acepta 'AAAA-MM-DD' (year no nulo) o 'MM-DD' (year = null)
+function parseDate(ds) {
+  const p = ds.split('-').map(Number);
+  return p.length === 3
+    ? { year:p[0], month:p[1], day:p[2] }
+    : { year:null, month:p[0], day:p[1] };
+}
+function getDays(ds) {
+  const now = new Date(), {month:m, day:d} = parseDate(ds);
+  let nx = new Date(now.getFullYear(), m-1, d);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (nx < today) nx = new Date(now.getFullYear()+1, m-1, d);
+  return Math.round((nx - today)/86400000);
+}
+function isToday(ds) {
+  const n = new Date(), {month:m, day:d} = parseDate(ds);
+  return n.getMonth()+1===m && n.getDate()===d;
+}
+function fmtDate(ds) {
+  const {month:m, day:d} = parseDate(ds);
+  return `${d} de ${MONTHS_ES[m-1]}`;
+}
+// Edad que cumplirá en su próximo cumpleaños (null si no hay año)
+function getAge(ds) {
+  const { year, month, day } = parseDate(ds);
+  if (!year) return null;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let nx = new Date(now.getFullYear(), month-1, day);
+  if (nx < today) nx = new Date(now.getFullYear()+1, month-1, day);
+  return nx.getFullYear() - year;
+}
+function ini(name) { return name.trim().split(' ')[0][0].toUpperCase(); }
+function colorFor(name) {
+  let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))&0xffff;
+  return PALETTE[h%PALETTE.length];
+}
+function genMsg(p) { return (MSGS[p.relation]||MSGS.default)(p.name,p.nickname); }
+
+/* ═══════════════════════════════════════
+   THREE.JS CONFETTI CELEBRATION
+═══════════════════════════════════════ */
+let threeActive = false;
+let renderer, scene, camera, animId, particles;
+
+function launchCelebration() {
+  if (threeActive) return;
+  threeActive = true;
+  const canvas = document.getElementById('three-canvas');
+  canvas.classList.add('visible');
+
+  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  scene  = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.z = 10;
+
+  // confetti pieces
+  const geo = new THREE.BufferGeometry();
+  const COUNT = 400;
+  const pos = new Float32Array(COUNT * 3);
+  const vel = [];
+  const colors = new Float32Array(COUNT * 3);
+  const hexColors = [0xE91E8C, 0x9C27B0, 0x00BCD4, 0xFFC107, 0x4CAF50, 0xFF5722, 0x3F51B5, 0xFFFFFF];
+  const tmpColor = new THREE.Color();
+
+  for (let i=0; i<COUNT; i++) {
+    pos[i*3]   = (Math.random()-0.5)*20;
+    pos[i*3+1] = Math.random()*20 + 5;
+    pos[i*3+2] = (Math.random()-0.5)*10;
+    vel.push({ vy: -(0.02+Math.random()*0.06), vx: (Math.random()-.5)*0.03, spin: (Math.random()-.5)*0.1 });
+    tmpColor.setHex(hexColors[Math.floor(Math.random()*hexColors.length)]);
+    colors[i*3]   = tmpColor.r;
+    colors[i*3+1] = tmpColor.g;
+    colors[i*3+2] = tmpColor.b;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
+
+  const mat = new THREE.PointsMaterial({ size:.22, vertexColors: true, transparent: true, opacity: .95 });
+  particles = new THREE.Points(geo, mat);
+  scene.add(particles);
+
+  // floating balloons (spheres)
+  const balloonColors = [0xE91E8C, 0xFFC107, 0x00BCD4, 0x9C27B0, 0x4CAF50];
+  const balloons = [];
+  for (let i=0; i<8; i++) {
+    const g = new THREE.SphereGeometry(0.18+Math.random()*.12, 16, 16);
+    const m = new THREE.MeshPhongMaterial({ color: balloonColors[i%balloonColors.length], shininess: 80 });
+    const mesh = new THREE.Mesh(g, m);
+    mesh.position.set((Math.random()-.5)*16, -12+Math.random()*4, (Math.random()-.5)*6);
+    mesh.userData.vy = 0.04 + Math.random()*.03;
+    mesh.userData.vx = (Math.random()-.5)*.015;
+    scene.add(mesh);
+    balloons.push(mesh);
+  }
+
+  // light
+  const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+  const point   = new THREE.PointLight(0xffffff, 1.2, 50);
+  point.position.set(5, 5, 5);
+  scene.add(ambient, point);
+
+  let elapsed = 0;
+  function animate() {
+    animId = requestAnimationFrame(animate);
+    elapsed++;
+    const posArr = particles.geometry.attributes.position.array;
+    for (let i=0; i<COUNT; i++) {
+      posArr[i*3]   += vel[i].vx;
+      posArr[i*3+1] += vel[i].vy;
+      if (posArr[i*3+1] < -12) posArr[i*3+1] = 12;
+    }
+    particles.geometry.attributes.position.needsUpdate = true;
+    particles.rotation.y += .001;
+    balloons.forEach(b => {
+      b.position.y += b.userData.vy;
+      b.position.x += b.userData.vx;
+      b.rotation.y += .01;
+      if (b.position.y > 14) b.position.y = -12;
+    });
+    renderer.render(scene, camera);
+
+    // auto-stop after 8s
+    if (elapsed > 480) stopCelebration();
+  }
+  animate();
+
+  window.addEventListener('resize', onResize);
+}
+
+function onResize() {
+  if (!renderer) return;
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function stopCelebration() {
+  if (!threeActive) return;
+  const canvas = document.getElementById('three-canvas');
+  canvas.classList.remove('visible');
+  cancelAnimationFrame(animId);
+  if (renderer) renderer.dispose();
+  renderer = null; threeActive = false;
+  window.removeEventListener('resize', onResize);
+}
+
+/* ═══════════════════════════════════════
+   SORTED DATA
+═══════════════════════════════════════ */
+const sorted = [...BIRTHDAYS]
+  .map(p => ({...p, days:getDays(p.date), today:isToday(p.date)}))
+  .sort((a,b) => a.days - b.days);
+
+/* ═══════════════════════════════════════
+   HEADER
+═══════════════════════════════════════ */
+(()=>{
+  const n = new Date();
+  document.getElementById('header-date').textContent =
+    `${DAYS_ES[n.getDay()]} ${n.getDate()} ${MONTHS_ES[n.getMonth()].slice(0,3)}`;
+})();
+
+/* ═══════════════════════════════════════
+   BIRTHDAY BANNER + CELEBRATION
+═══════════════════════════════════════ */
+const todayPeople = sorted.filter(p => p.today);
+if (todayPeople.length) {
+  const names = todayPeople.map(p => `${p.nickname}`).join(' y ');
+  document.getElementById('banner-title').textContent = `¡Hoy cumple ${names}! 🎂`;
+  document.getElementById('bday-banner').hidden = false;
+  // Launch Three.js after a small delay
+  setTimeout(launchCelebration, 800);
+}
+
+/* ═══════════════════════════════════════
+   SWIPE / DECK CARDS
+═══════════════════════════════════════ */
+let cur = 0;
+const deckWrap = document.getElementById('deck-wrap');
+const dotsEl   = document.getElementById('deck-dots');
+const counter  = document.getElementById('deck-counter');
+const N = sorted.length;
+
+function buildDeck() {
+  deckWrap.innerHTML = '';
+  dotsEl.innerHTML = '';
+  sorted.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 's-card';
+    el.dataset.idx = i;
+    const col = colorFor(p.name);
+    const col2 = PALETTE[(PALETTE.indexOf(col)+2)%PALETTE.length];
+    el.style.background = `linear-gradient(145deg, ${col}, ${col2}99)`;
+    const dLabel = p.days===0 ? '¡Hoy!' : p.days===1 ? 'Mañana' : `En ${p.days} días`;
+    const age = getAge(p.date);
+    el.innerHTML = `
+      <div class="s-card-orb1"></div>
+      <div class="s-card-orb2"></div>
+      <div class="s-card-top">
+        <div class="s-avatar">${ini(p.name)}</div>
+        <div class="s-days-pill">${dLabel}</div>
+      </div>
+      <div class="s-card-bottom">
+        <div class="s-name">${p.name}</div>
+        <div class="s-nick">"${p.nickname}"</div>
+        <div class="s-date-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          ${fmtDate(p.date)}${age!==null?` · cumple ${age}`:''}
+        </div>
+        <div class="s-actions">
+          <button class="s-btn" onclick="openModal('${p.name}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Mensaje
+          </button>
+          ${p.phone ? `<a class="s-btn" href="https://wa.me/${p.phone}?text=${encodeURIComponent(genMsg(p))}" target="_blank">
+            <svg viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+          </a>` : ''}
+        </div>
+      </div>`;
+    deckWrap.appendChild(el);
+
+    const dot = document.createElement('div');
+    dot.className = 'ddot';
+    dotsEl.appendChild(dot);
+  });
+  refreshDeck(false);
+}
+
+function refreshDeck(animate=true) {
+  const cards = deckWrap.querySelectorAll('.s-card');
+  const dots  = dotsEl.querySelectorAll('.ddot');
+  counter.textContent = `${cur+1} / ${N}`;
+  dots.forEach((d,i) => d.classList.toggle('on', i===cur));
+
+  cards.forEach((card, i) => {
+    const rel = ((i - cur) % N + N) % N;
+    let ty=0, scale=1, op=1, zi=1, tx=0, rot=0;
+    if      (rel===0) { ty=0;  scale=1;    op=1;   zi=5; }
+    else if (rel===1) { ty=18; scale=.94;  op=.85; zi=4; }
+    else if (rel===2) { ty=34; scale=.88;  op=.65; zi=3; }
+    else if (rel===3) { ty=48; scale=.82;  op=.4;  zi=2; }
+    else              { ty=60; scale=.76;  op=0;   zi=1; }
+    card.style.zIndex = zi;
+    if (animate && typeof gsap !== 'undefined') {
+      gsap.to(card, { y:ty, scale, opacity:op, x:tx, rotation:rot, duration:.4, ease:'back.out(1.2)' });
+    } else {
+      card.style.transform = `translateY(${ty}px) scale(${scale})`;
+      card.style.opacity   = op;
+    }
+  });
+}
+
+function goNext() {
+  if (typeof gsap !== 'undefined') {
+    const top = deckWrap.querySelectorAll('.s-card')[cur];
+    gsap.to(top, { x: -window.innerWidth*.6, rotation: -12, opacity:0, duration:.35, ease:'power2.in', onComplete:()=>{
+      gsap.set(top, { x:0, rotation:0 });
+      cur = (cur+1)%N; refreshDeck();
+    }});
+  } else { cur=(cur+1)%N; refreshDeck(); }
+}
+
+function goPrev() {
+  if (typeof gsap !== 'undefined') {
+    cur = (cur-1+N)%N;
+    const top = deckWrap.querySelectorAll('.s-card')[cur];
+    gsap.fromTo(top, { x: -window.innerWidth*.6, rotation:-12, opacity:0 },
+      { x:0, rotation:0, opacity:1, duration:.4, ease:'back.out(1.4)', onStart:()=>refreshDeck() });
+  } else { cur=(cur-1+N)%N; refreshDeck(); }
+}
+
+document.getElementById('btn-next').addEventListener('click', goNext);
+document.getElementById('btn-prev').addEventListener('click', goPrev);
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('view-swipe').classList.contains('active')) return;
+  if (e.key==='ArrowLeft')  goPrev();
+  if (e.key==='ArrowRight') goNext();
+});
+
+// Touch swipe
+let tx0=0, ty0=0, dragging=false;
+deckWrap.addEventListener('pointerdown', e=>{ tx0=e.clientX; ty0=e.clientY; dragging=true; deckWrap.setPointerCapture(e.pointerId); });
+deckWrap.addEventListener('pointermove', e=>{
+  if (!dragging) return;
+  const dx=e.clientX-tx0;
+  const top=deckWrap.querySelectorAll('.s-card')[cur];
+  if(top) top.style.transform=`translateY(0) scale(1) translateX(${dx}px) rotate(${dx*.03}deg)`;
+});
+deckWrap.addEventListener('pointerup', e=>{
+  if (!dragging) return; dragging=false;
+  const dx=e.clientX-tx0;
+  const top=deckWrap.querySelectorAll('.s-card')[cur];
+  if(top) top.style.transform='';
+  if (Math.abs(dx)>55) { dx<0 ? goNext() : goPrev(); }
+  else refreshDeck();
+});
+deckWrap.addEventListener('pointercancel', ()=>{
+  dragging=false;
+  const top=deckWrap.querySelectorAll('.s-card')[cur];
+  if(top) top.style.transform='';
+  refreshDeck();
+});
+
+buildDeck();
+
+/* ═══════════════════════════════════════
+   LIST VIEW
+═══════════════════════════════════════ */
+(()=>{
+  const el = document.getElementById('up-list');
+  el.innerHTML = sorted.map(p => {
+    const col = colorFor(p.name);
+    const age = getAge(p.date);
+    const badge = p.days===0
+      ? `<span class="up-badge b-today">Hoy</span>`
+      : p.days<=7 ? `<span class="up-badge b-soon">En ${p.days}d</span>`
+      : `<span class="up-badge b-later">${fmtDate(p.date)}</span>`;
+    return `<div class="up-item">
+      <div class="up-av" style="background:${col}">${ini(p.name)}</div>
+      <div class="up-info">
+        <div class="up-name">${p.name}${age!==null?` <span class="up-age">cumple ${age}</span>`:''}</div>
+        <div class="up-nick">"${p.nickname}" · ${fmtDate(p.date)}</div>
+      </div>
+      ${badge}
+      <button class="up-msg-btn" onclick="openModal('${p.name}')" title="Ver mensaje">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+})();
+
+/* ═══════════════════════════════════════
+   CALENDAR VIEW
+═══════════════════════════════════════ */
+const DOW_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+/* Constructores reutilizables (panel destacado + modal) --------------- */
+// onClickAttr(name) devuelve el atributo onclick para abrir a una persona
+function miniCalCells(mi, year, onClickAttr) {
+  const now = new Date();
+  const entries = BIRTHDAYS
+    .filter(p => parseDate(p.date).month-1===mi)
+    .sort((a,b) => parseDate(a.date).day-parseDate(b.date).day);
+  const firstDay = new Date(year, mi, 1).getDay();
+  const daysInMonth = new Date(year, mi+1, 0).getDate();
+  const todayD = (now.getMonth()===mi && now.getFullYear()===year) ? now.getDate() : -1;
+
+  const bdayMap = {};
+  entries.forEach(p => { const d = parseDate(p.date).day; (bdayMap[d] = bdayMap[d]||[]).push(p); });
+
+  let cells = '';
+  for (let i=0; i<firstDay; i++) cells += `<div class="mini-day empty"></div>`;
+  for (let d=1; d<=daysInMonth; d++) {
+    const isTdy = d===todayD;
+    const hasBday = !!bdayMap[d];
+    const dotColor = hasBday ? colorFor(bdayMap[d][0].name) : '';
+    cells += `<div class="mini-day ${isTdy?'today':''} ${hasBday?'has-bday':''}"
+      ${hasBday?onClickAttr(bdayMap[d][0].name):''}>
+      <span class="mini-day-num">${d}</span>
+      ${hasBday?`<span class="bday-dot" style="background:${isTdy?'var(--bg)':dotColor}"></span>`:''}
+    </div>`;
+  }
+  return cells;
+}
+
+function monthListHTML(mi, year, onClickAttr) {
+  const entries = BIRTHDAYS
+    .filter(p => parseDate(p.date).month-1===mi)
+    .sort((a,b) => parseDate(a.date).day-parseDate(b.date).day);
+  if (!entries.length)
+    return `<div class="month-no-bdays">Sin cumpleaños en ${MONTHS_ES[mi]}</div>`;
+  return `<div class="month-bday-list">` + entries.map(p => {
+    const d    = parseDate(p.date).day;
+    const dow  = new Date(year, mi, d).getDay();
+    const col2 = colorFor(p.name);
+    const isTodayP = isToday(p.date);
+    const age  = getAge(p.date);
+    return `<div class="month-bday-row" ${onClickAttr(p.name)}>
+      <div class="mbr-av" style="background:${col2}">${ini(p.name)}</div>
+      <div class="mbr-info">
+        <div class="mbr-name">${p.name} <span style="font-size:.75rem;color:var(--fg-muted);font-weight:600">"${p.nickname}"</span></div>
+        <div class="mbr-date">${DOW_ES[dow]} ${d} de ${MONTHS_ES[mi]}${age!==null?` · cumple ${age}`:''}</div>
+      </div>
+      <span class="mbr-day-label" style="background:${col2}22;color:${col2}">
+        ${isTodayP ? '¡Hoy!' : DOW_ES[dow]}
+      </span>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+const dowHeaderHTML = DOW_ES.map(d => `<div class="mini-dow">${d}</div>`).join('');
+
+/* ═══════════════════════════════════════
+   CALENDAR VIEW: mes actual destacado + resto en grid
+═══════════════════════════════════════ */
+(()=>{
+  const now = new Date();
+  const year = now.getFullYear();
+  const curMi = now.getMonth();
+
+  // ── Mes actual destacado (inline) ──
+  const col = PALETTE[curMi % PALETTE.length];
+  const openAttr = name => `onclick="openModal('${name}')"`;
+  document.getElementById('cal-featured').innerHTML = `
+    <div class="cal-featured">
+      <div class="cal-featured-head" style="background:${col}">
+        <div class="cf-left">
+          <span class="cal-featured-title">${MONTHS_ES[curMi]}</span>
+          <span class="cal-featured-year">${year}</span>
+        </div>
+        <span class="cal-featured-badge">Este mes</span>
+      </div>
+      <div class="mini-cal">
+        <div class="mini-cal-dow">${dowHeaderHTML}</div>
+        <div class="mini-cal-days">${miniCalCells(curMi, year, openAttr)}</div>
+      </div>
+      ${monthListHTML(curMi, year, openAttr)}
+    </div>`;
+
+  // ── Resto de meses en grid ──
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = MONTHS_ES.map((mon, mi) => {
+    if (mi === curMi) return '';            // el mes actual ya va arriba
+    const c = PALETTE[mi%PALETTE.length];
+    const entries = BIRTHDAYS
+      .filter(p => parseDate(p.date).month-1===mi)
+      .sort((a,b) => parseDate(a.date).day-parseDate(b.date).day);
+    const rows = entries.length
+      ? entries.map(p=>{
+          const age = getAge(p.date);
+          return `
+          <div class="cal-row">
+            <span class="cal-day" style="color:${c}">${String(parseDate(p.date).day).padStart(2,'0')}</span>
+            <span class="cal-pname">${p.name.split(' ')[0]}</span>
+            <span class="cal-pnick">${p.nickname!==p.name.split(' ')[0]?'"'+p.nickname+'"':''}</span>
+            ${age!==null?`<span class="cal-age">${age}</span>`:''}
+          </div>`;}).join('')
+      : `<div class="cal-empty">Sin cumpleaños</div>`;
+    return `
+    <div class="cal-month" data-mi="${mi}" onclick="openMonthModal(${mi})">
+      <div class="cal-head" style="background:${c}">
+        <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 100 8 4 4 0 000-8zm0 10c-4 0-8 2-8 4v1h16v-1c0-2-4-4-8-4z"/></svg>
+        ${mon.toUpperCase()}
+      </div>
+      <div class="cal-body">${rows}</div>
+    </div>`;
+  }).join('');
+})();
+
+/* ═══════════════════════════════════════
+   MONTH MODAL (otros meses)
+═══════════════════════════════════════ */
+function openMonthModal(mi) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const col  = PALETTE[mi % PALETTE.length];
+
+  document.getElementById('mm-head').style.background = col;
+  document.getElementById('mm-title').textContent = MONTHS_ES[mi];
+  document.getElementById('mm-year').textContent  = year;
+  document.getElementById('mm-dow').innerHTML = dowHeaderHTML;
+
+  const openAttr = name =>
+    `onclick="event.stopPropagation();document.getElementById('month-modal').hidden=true;openModal('${name}')"`;
+  document.getElementById('mm-days').innerHTML = miniCalCells(mi, year, openAttr);
+  document.getElementById('mm-list').innerHTML = monthListHTML(mi, year, openAttr);
+
+  const overlay = document.getElementById('month-modal');
+  overlay.hidden = false;
+  if (typeof gsap !== 'undefined') {
+    gsap.fromTo('.month-modal', { y:40, opacity:0, scale:.96 },
+      { y:0, opacity:1, scale:1, duration:.35, ease:'back.out(1.5)' });
+  }
+}
+
+document.getElementById('mm-close').addEventListener('click', () => {
+  document.getElementById('month-modal').hidden = true;
+});
+document.getElementById('month-modal').addEventListener('click', e => {
+  if (e.target===document.getElementById('month-modal'))
+    document.getElementById('month-modal').hidden = true;
+});
+
+/* ═══════════════════════════════════════
+   TABS
+═══════════════════════════════════════ */
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+  });
+});
+
+/* ═══════════════════════════════════════
+   MODAL
+═══════════════════════════════════════ */
+let curP = null;
+function openModal(name) {
+  curP = BIRTHDAYS.find(p=>p.name===name);
+  if (!curP) return;
+  const col = colorFor(curP.name);
+  const msg = genMsg(curP);
+  document.getElementById('m-av').style.background = col;
+  document.getElementById('m-av').textContent = ini(curP.name);
+  document.getElementById('m-name').textContent = curP.name;
+  document.getElementById('m-sub').textContent  = `"${curP.nickname}" · ${fmtDate(curP.date)}`;
+  document.getElementById('m-msg').value = msg;
+  const wa = document.getElementById('btn-wa');
+  if (curP.phone) {
+    wa.href = `https://wa.me/${curP.phone}?text=${encodeURIComponent(msg)}`;
+    wa.style.display = '';
+  } else wa.style.display = 'none';
+  document.getElementById('modal').hidden = false;
+  if (typeof gsap !== 'undefined') {
+    gsap.fromTo('.modal', { y:60, opacity:0 }, { y:0, opacity:1, duration:.35, ease:'back.out(1.4)' });
+  }
+}
+document.getElementById('btn-cancel').onclick = () => document.getElementById('modal').hidden = true;
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target===document.getElementById('modal')) document.getElementById('modal').hidden = true;
+});
+document.getElementById('m-msg').addEventListener('input', () => {
+  if (!curP?.phone) return;
+  document.getElementById('btn-wa').href =
+    `https://wa.me/${curP.phone}?text=${encodeURIComponent(document.getElementById('m-msg').value)}`;
+});
+document.getElementById('btn-copy').onclick = async () => {
+  const btn = document.getElementById('btn-copy');
+  try {
+    await navigator.clipboard.writeText(document.getElementById('m-msg').value);
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Copiado`;
+  } catch {
+    document.getElementById('m-msg').select();
+    btn.innerHTML = '⚠️ Selecciona';
+  }
+  setTimeout(()=>{ btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copiar`; }, 2200);
+};
+
+/* tap banner para relanzar celebración */
+document.getElementById('bday-banner').addEventListener('click', () => {
+  stopCelebration(); setTimeout(launchCelebration, 100);
+});
+</script>
+
+</body></html>
