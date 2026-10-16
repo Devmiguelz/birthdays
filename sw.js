@@ -1,7 +1,7 @@
 /* Service worker de "Cumpleaños Familia"
    Cachea el app-shell para que funcione sin conexión tras la primera visita. */
-const CACHE = 'cumple-v3';
-const SHELL = ['./', './index.html', './data.json'];
+const CACHE = 'cumple-v4';
+const SHELL = ['./', './index.html', './styles.css', './data.json'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -20,14 +20,11 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
 
   const url = new URL(e.request.url);
+  const sameOrigin = url.origin === self.location.origin;
 
-  // HTML (navegación / index.html) y data.json: network-first.
+  // Nuestros propios archivos (HTML, CSS, data.json): NETWORK-FIRST.
   // Así los cambios de código y de datos se ven al recargar; cae a caché sin red.
-  const isHTML = e.request.mode === 'navigate'
-    || url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
-  const isData = url.pathname.endsWith('/data.json');
-
-  if (isHTML || isData) {
+  if (sameOrigin) {
     e.respondWith(
       fetch(e.request).then(res => {
         if (res && res.ok) {
@@ -36,12 +33,12 @@ self.addEventListener('fetch', e => {
         }
         return res;
       }).catch(() => caches.match(e.request).then(hit =>
-        hit || caches.match(isData ? './data.json' : './index.html')))
+        hit || (e.request.mode === 'navigate' ? caches.match('./index.html') : undefined)))
     );
     return;
   }
 
-  // Resto (CDN: three.js, gsap, fuentes): cache-first
+  // CDN externas (three.js, gsap, fuentes): CACHE-FIRST (rápidas y offline)
   e.respondWith(
     caches.match(e.request).then(hit =>
       hit || fetch(e.request).then(res => {
@@ -50,9 +47,7 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
         }
         return res;
-      }).catch(() =>
-        e.request.mode === 'navigate' ? caches.match('./index.html') : undefined
-      )
+      }).catch(() => undefined)
     )
   );
 });

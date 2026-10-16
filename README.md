@@ -11,27 +11,41 @@ App web (PWA) para no olvidar nunca un cumpleaños de la familia. Muestra los pr
   - **Lista** — todos ordenados por cercanía, con insignia de "Hoy" / "En N días".
   - **Calendario** — el mes actual destacado arriba (mini-calendario + lista) y el resto de meses debajo.
 - **Edad que cumple** — calculada desde la fecha de nacimiento (se muestra en tarjetas, lista y calendario).
-- **Mensaje automático** — texto de felicitación personalizado según la relación (madre, pareja, primo…), listo para copiar o abrir en WhatsApp.
+- **Mensaje automático** — texto de felicitación listo para copiar o abrir en WhatsApp.
 - **Celebración** — confeti y globos en 3D (Three.js) cuando alguien cumple hoy.
 - **PWA instalable** — se instala en móvil y escritorio y funciona sin conexión.
-- **Un solo archivo** — todo vive en `index.html` (+ `sw.js` para el modo offline). Sin build ni dependencias que instalar.
+- **Edición desde la app** — panel de administración (oculto) que guarda los cambios en `data.json` vía la API de GitHub, sin backend.
+
+## 🗂️ Estructura
+
+```
+birthdays/
+├── index.html    # app (estructura + lógica)
+├── styles.css    # estilos
+├── data.json     # los cumpleaños (datos)
+├── sw.js         # service worker (offline + caché)
+└── README.md
+```
 
 ## 📝 Editar los cumpleaños
 
-Abre `index.html` y edita el arreglo `BIRTHDAYS`:
+Hay dos formas:
 
-```js
-const BIRTHDAYS = [
-  { name:'Miguel Zambrano', nickname:'Mono', date:'1995-10-15', phone:'573001234567', relation:'yo' },
-  // ...
-];
+**1. Desde la app (recomendado)** — panel de administración oculto:
+- Muéstralo con **Ctrl + Shift + A** (PC) o tocando **5 veces el logo** de la cabecera (móvil).
+- Pega tu **token de GitHub** (fine-grained, con permiso *Contents: Read and write* sobre el repo `birthdays`).
+- Añade / edita / borra personas. Los cambios quedan **pendientes en local** hasta que pulsas **"Sincronizar cambios"**, que los sube a `data.json`.
+
+**2. Editando `data.json` a mano** (y `git push`):
+
+```json
+[
+  { "name": "Miguel Zambrano", "nickname": "Mono", "date": "1995-10-15", "phone": "573001234567" }
+]
 ```
 
-- **`date`** — `AAAA-MM-DD` para mostrar la edad, o `MM-DD` si no quieres poner el año (no mostrará edad).
-- **`phone`** — con código de país y sin `+` ni espacios (ej. `57300...`). Déjalo en `''` para ocultar el botón de WhatsApp.
-- **`relation`** — define qué plantilla de mensaje se usa. Las disponibles están en el objeto `MSGS` (`yo`, `madre`, `padre`, `pareja`, `hermana`, `primo`, `abuela`, `sobrina`, `default`).
-
-> Los años del repositorio son de ejemplo: reemplázalos por los reales.
+- **`date`** — `AAAA-MM-DD` para mostrar la edad, o `MM-DD` si no quieres poner el año.
+- **`phone`** — con código de país y sin `+` ni espacios (ej. `57300...`). Déjalo en `""` para ocultar el botón de WhatsApp.
 
 ## 🚀 Desarrollo
 
