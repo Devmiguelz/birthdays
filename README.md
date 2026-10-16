@@ -20,8 +20,9 @@ App web (PWA) para no olvidar nunca un cumpleaños de la familia. Muestra los pr
 
 ```
 birthdays/
-├── index.html    # app (estructura + lógica)
-├── styles.css    # estilos
+├── index.html    # estructura (HTML)
+├── styles.css    # estilos (CSS)
+├── app.js        # lógica (JavaScript)
 ├── data.json     # los cumpleaños (datos)
 ├── sw.js         # service worker (offline + caché)
 └── README.md

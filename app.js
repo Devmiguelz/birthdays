@@ -1,0 +1,923 @@
+(function () {
+  const SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#1A1530"/><g fill="none" stroke="#F0EAF8" stroke-width="7" stroke-linecap="round" opacity=".75"><path d="M258 330 Q252 385 256 432"/><path d="M188 286 Q212 372 256 432"/><path d="M324 240 Q300 345 256 432"/></g><ellipse cx="258" cy="250" rx="66" ry="80" fill="#FFC107"/><path d="M248 327 L268 327 L258 347Z" fill="#FFC107"/><ellipse cx="238" cy="226" rx="17" ry="26" fill="#fff" opacity=".3"/><ellipse cx="188" cy="190" rx="80" ry="96" fill="#E91E8C"/><path d="M176 283 L200 283 L188 305Z" fill="#E91E8C"/><ellipse cx="160" cy="160" rx="21" ry="33" fill="#fff" opacity=".28"/><ellipse cx="324" cy="150" rx="74" ry="90" fill="#00BCD4"/><path d="M313 237 L335 237 L324 258Z" fill="#00BCD4"/><ellipse cx="300" cy="122" rx="19" ry="29" fill="#fff" opacity=".28"/></svg>`;
+  const svgHref = 'data:image/svg+xml,' + encodeURIComponent(SVG);
+
+  // Rasteriza el SVG a PNG (mejor compatibilidad en iOS/Android)
+  function png(size) {
+    return new Promise(res => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = c.height = size;
+        const x = c.getContext('2d');
+        x.drawImage(img, 0, 0, size, size);
+        try { res(c.toDataURL('image/png')); } catch { res(null); }
+      };
+      img.onerror = () => res(null);
+      img.src = svgHref;
+    });
+  }
+
+  Promise.all([png(192), png(512), png(180), png(64)]).then(([p192, p512, p180, p64]) => {
+    // Icono de la pestaña del navegador (PNG = compatibilidad garantizada)
+    if (p64) {
+      document.querySelectorAll('link[rel~="icon"]').forEach(n => n.remove());
+      const fav = document.createElement('link');
+      fav.rel = 'icon'; fav.type = 'image/png'; fav.href = p64;
+      document.head.appendChild(fav);
+    }
+    // Icono para "Añadir a pantalla de inicio" en iOS
+    if (p180) {
+      const al = document.createElement('link');
+      al.rel = 'apple-touch-icon'; al.href = p180;
+      document.head.appendChild(al);
+    }
+    const icons = [];
+    if (p192) icons.push({ src: p192, sizes: '192x192', type: 'image/png', purpose: 'any' });
+    if (p512) icons.push({ src: p512, sizes: '512x512', type: 'image/png', purpose: 'any' });
+    if (p512) icons.push({ src: p512, sizes: '512x512', type: 'image/png', purpose: 'maskable' });
+    icons.push({ src: svgHref, sizes: 'any', type: 'image/svg+xml' });
+
+    const manifest = {
+      name: 'Cumpleaños Familia',
+      short_name: 'Cumpleaños',
+      description: 'Cumpleaños de la familia',
+      start_url: '.',
+      scope: '.',
+      display: 'standalone',
+      orientation: 'portrait',
+      background_color: '#0D0A18',
+      theme_color: '#2D1B69',
+      icons
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }));
+    const ml = document.createElement('link');
+    ml.rel = 'manifest'; ml.href = url;
+    document.head.appendChild(ml);
+  });
+
+  // Service worker: solo cuando se sirve por http(s), no con file://
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+})();
+
+/* ===== app.js (unificado) ===== */
+
+/* ═══════════════════════════════════════
+   DATA
+═══════════════════════════════════════ */
+const PALETTE = ['#E91E8C','#9C27B0','#00BCD4','#FFC107','#4CAF50','#FF5722','#3F51B5','#009688'];
+const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS_ES   = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+
+// Los cumpleaños viven en data.json (se cargan al iniciar). 'date' acepta
+// 'AAAA-MM-DD' (muestra la edad) o 'MM-DD' (sin año = sin edad).
+let BIRTHDAYS = [];
+
+// Mensaje de felicitación genérico (ya no se usa "relación")
+
+/* ═══════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════ */
+// Acepta 'AAAA-MM-DD' (year no nulo) o 'MM-DD' (year = null)
+function parseDate(ds) {
+  const p = ds.split('-').map(Number);
+  return p.length === 3
+    ? { year:p[0], month:p[1], day:p[2] }
+    : { year:null, month:p[0], day:p[1] };
+}
+function getDays(ds) {
+  const now = new Date(), {month:m, day:d} = parseDate(ds);
+  let nx = new Date(now.getFullYear(), m-1, d);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (nx < today) nx = new Date(now.getFullYear()+1, m-1, d);
+  return Math.round((nx - today)/86400000);
+}
+function isToday(ds) {
+  const n = new Date(), {month:m, day:d} = parseDate(ds);
+  return n.getMonth()+1===m && n.getDate()===d;
+}
+function fmtDate(ds) {
+  const {month:m, day:d} = parseDate(ds);
+  return `${d} de ${MONTHS_ES[m-1]}`;
+}
+// Edad que cumplirá en su próximo cumpleaños (null si no hay año)
+function getAge(ds) {
+  const { year, month, day } = parseDate(ds);
+  if (!year) return null;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let nx = new Date(now.getFullYear(), month-1, day);
+  if (nx < today) nx = new Date(now.getFullYear()+1, month-1, day);
+  return nx.getFullYear() - year;
+}
+function ini(name) { return name.trim().split(' ')[0][0].toUpperCase(); }
+function colorFor(name) {
+  let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))&0xffff;
+  return PALETTE[h%PALETTE.length];
+}
+function genMsg(p) {
+  const k = p.nickname || p.name.split(' ')[0];
+  return `¡Feliz cumpleaños, ${k}! 🎂🎉 Te deseo un día increíble y un año lleno de cosas buenas. ¡Un abrazo enorme! ❤️`;
+}
+
+/* ═══════════════════════════════════════
+   THREE.JS CONFETTI CELEBRATION
+═══════════════════════════════════════ */
+let threeActive = false;
+let renderer, scene, camera, animId, particles;
+
+function launchCelebration() {
+  if (threeActive) return;
+  threeActive = true;
+  const canvas = document.getElementById('three-canvas');
+  canvas.classList.add('visible');
+
+  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  scene  = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.z = 10;
+
+  // confetti pieces
+  const geo = new THREE.BufferGeometry();
+  const COUNT = 400;
+  const pos = new Float32Array(COUNT * 3);
+  const vel = [];
+  const colors = new Float32Array(COUNT * 3);
+  const hexColors = [0xE91E8C, 0x9C27B0, 0x00BCD4, 0xFFC107, 0x4CAF50, 0xFF5722, 0x3F51B5, 0xFFFFFF];
+  const tmpColor = new THREE.Color();
+
+  for (let i=0; i<COUNT; i++) {
+    pos[i*3]   = (Math.random()-0.5)*20;
+    pos[i*3+1] = Math.random()*20 + 5;
+    pos[i*3+2] = (Math.random()-0.5)*10;
+    vel.push({ vy: -(0.02+Math.random()*0.06), vx: (Math.random()-.5)*0.03, spin: (Math.random()-.5)*0.1 });
+    tmpColor.setHex(hexColors[Math.floor(Math.random()*hexColors.length)]);
+    colors[i*3]   = tmpColor.r;
+    colors[i*3+1] = tmpColor.g;
+    colors[i*3+2] = tmpColor.b;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
+
+  const mat = new THREE.PointsMaterial({ size:.22, vertexColors: true, transparent: true, opacity: .95 });
+  particles = new THREE.Points(geo, mat);
+  scene.add(particles);
+
+  // floating balloons (spheres)
+  const balloonColors = [0xE91E8C, 0xFFC107, 0x00BCD4, 0x9C27B0, 0x4CAF50];
+  const balloons = [];
+  for (let i=0; i<8; i++) {
+    const g = new THREE.SphereGeometry(0.18+Math.random()*.12, 16, 16);
+    const m = new THREE.MeshPhongMaterial({ color: balloonColors[i%balloonColors.length], shininess: 80 });
+    const mesh = new THREE.Mesh(g, m);
+    mesh.position.set((Math.random()-.5)*16, -12+Math.random()*4, (Math.random()-.5)*6);
+    mesh.userData.vy = 0.04 + Math.random()*.03;
+    mesh.userData.vx = (Math.random()-.5)*.015;
+    scene.add(mesh);
+    balloons.push(mesh);
+  }
+
+  // light
+  const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+  const point   = new THREE.PointLight(0xffffff, 1.2, 50);
+  point.position.set(5, 5, 5);
+  scene.add(ambient, point);
+
+  let elapsed = 0;
+  function animate() {
+    animId = requestAnimationFrame(animate);
+    elapsed++;
+    const posArr = particles.geometry.attributes.position.array;
+    for (let i=0; i<COUNT; i++) {
+      posArr[i*3]   += vel[i].vx;
+      posArr[i*3+1] += vel[i].vy;
+      if (posArr[i*3+1] < -12) posArr[i*3+1] = 12;
+    }
+    particles.geometry.attributes.position.needsUpdate = true;
+    particles.rotation.y += .001;
+    balloons.forEach(b => {
+      b.position.y += b.userData.vy;
+      b.position.x += b.userData.vx;
+      b.rotation.y += .01;
+      if (b.position.y > 14) b.position.y = -12;
+    });
+    renderer.render(scene, camera);
+
+    // auto-stop after 8s
+    if (elapsed > 480) stopCelebration();
+  }
+  animate();
+
+  window.addEventListener('resize', onResize);
+}
+
+function onResize() {
+  if (!renderer) return;
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function stopCelebration() {
+  if (!threeActive) return;
+  const canvas = document.getElementById('three-canvas');
+  canvas.classList.remove('visible');
+  cancelAnimationFrame(animId);
+  if (renderer) renderer.dispose();
+  renderer = null; threeActive = false;
+  window.removeEventListener('resize', onResize);
+}
+
+/* ═══════════════════════════════════════
+   SORTED DATA (se recalcula al cargar/editar)
+═══════════════════════════════════════ */
+let sorted = [];
+let N = 0;
+function computeSorted() {
+  sorted = [...BIRTHDAYS]
+    .map(p => ({...p, days:getDays(p.date), today:isToday(p.date)}))
+    .sort((a,b) => a.days - b.days);
+  N = sorted.length;
+}
+
+/* ═══════════════════════════════════════
+   HEADER
+═══════════════════════════════════════ */
+(()=>{
+  const n = new Date();
+  document.getElementById('header-date').textContent =
+    `${DAYS_ES[n.getDay()]} ${n.getDate()} ${MONTHS_ES[n.getMonth()].slice(0,3)}`;
+})();
+
+/* ═══════════════════════════════════════
+   BIRTHDAY BANNER + CELEBRATION
+═══════════════════════════════════════ */
+function buildBanner() {
+  const todayPeople = sorted.filter(p => p.today);
+  if (todayPeople.length) {
+    const names = todayPeople.map(p => `${p.nickname}`).join(' y ');
+    document.getElementById('banner-title').textContent = `¡Hoy cumple ${names}! 🎂`;
+    document.getElementById('bday-banner').hidden = false;
+    setTimeout(launchCelebration, 800);
+  } else {
+    document.getElementById('bday-banner').hidden = true;
+  }
+}
+
+/* ═══════════════════════════════════════
+   SWIPE / DECK CARDS
+═══════════════════════════════════════ */
+let cur = 0;
+const deckWrap = document.getElementById('deck-wrap');
+const dotsEl   = document.getElementById('deck-dots');
+const counter  = document.getElementById('deck-counter');
+
+function buildDeck() {
+  deckWrap.innerHTML = '';
+  dotsEl.innerHTML = '';
+  sorted.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 's-card';
+    el.dataset.idx = i;
+    const col = colorFor(p.name);
+    const col2 = PALETTE[(PALETTE.indexOf(col)+2)%PALETTE.length];
+    el.style.background = `linear-gradient(145deg, ${col}, ${col2}99)`;
+    const dLabel = p.days===0 ? '¡Hoy!' : p.days===1 ? 'Mañana' : `En ${p.days} días`;
+    const age = getAge(p.date);
+    el.innerHTML = `
+      <div class="s-card-orb1"></div>
+      <div class="s-card-orb2"></div>
+      <div class="s-card-top">
+        <div class="s-avatar">${ini(p.name)}</div>
+        <div class="s-days-pill">${dLabel}</div>
+      </div>
+      <div class="s-card-bottom">
+        <div class="s-name">${p.name}</div>
+        <div class="s-nick">"${p.nickname}"</div>
+        <div class="s-date-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          ${fmtDate(p.date)}${age!==null?` · cumple ${age}`:''}
+        </div>
+        <div class="s-actions">
+          <button class="s-btn" onclick="openModal('${p.name}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Mensaje
+          </button>
+          ${p.phone ? `<a class="s-btn" href="https://wa.me/${p.phone}?text=${encodeURIComponent(genMsg(p))}" target="_blank">
+            <svg viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+          </a>` : ''}
+        </div>
+      </div>`;
+    deckWrap.appendChild(el);
+
+    const dot = document.createElement('div');
+    dot.className = 'ddot';
+    dotsEl.appendChild(dot);
+  });
+  refreshDeck(false);
+}
+
+function refreshDeck(animate=true) {
+  const cards = deckWrap.querySelectorAll('.s-card');
+  const dots  = dotsEl.querySelectorAll('.ddot');
+  counter.textContent = `${cur+1} / ${N}`;
+  dots.forEach((d,i) => d.classList.toggle('on', i===cur));
+
+  cards.forEach((card, i) => {
+    const rel = ((i - cur) % N + N) % N;
+    let ty=0, scale=1, op=1, zi=1, tx=0, rot=0;
+    if      (rel===0) { ty=0;  scale=1;    op=1;   zi=5; }
+    else if (rel===1) { ty=18; scale=.94;  op=.85; zi=4; }
+    else if (rel===2) { ty=34; scale=.88;  op=.65; zi=3; }
+    else if (rel===3) { ty=48; scale=.82;  op=.4;  zi=2; }
+    else              { ty=60; scale=.76;  op=0;   zi=1; }
+    card.style.zIndex = zi;
+    if (animate && typeof gsap !== 'undefined') {
+      gsap.to(card, { y:ty, scale, opacity:op, x:tx, rotation:rot, duration:.4, ease:'back.out(1.2)' });
+    } else {
+      card.style.transform = `translateY(${ty}px) scale(${scale})`;
+      card.style.opacity   = op;
+    }
+  });
+}
+
+function goNext() {
+  if (typeof gsap !== 'undefined') {
+    const top = deckWrap.querySelectorAll('.s-card')[cur];
+    gsap.to(top, { x: -window.innerWidth*.6, rotation: -12, opacity:0, duration:.35, ease:'power2.in', onComplete:()=>{
+      gsap.set(top, { x:0, rotation:0 });
+      cur = (cur+1)%N; refreshDeck();
+    }});
+  } else { cur=(cur+1)%N; refreshDeck(); }
+}
+
+function goPrev() {
+  if (typeof gsap !== 'undefined') {
+    cur = (cur-1+N)%N;
+    const top = deckWrap.querySelectorAll('.s-card')[cur];
+    gsap.fromTo(top, { x: -window.innerWidth*.6, rotation:-12, opacity:0 },
+      { x:0, rotation:0, opacity:1, duration:.4, ease:'back.out(1.4)', onStart:()=>refreshDeck() });
+  } else { cur=(cur-1+N)%N; refreshDeck(); }
+}
+
+document.getElementById('btn-next').addEventListener('click', goNext);
+document.getElementById('btn-prev').addEventListener('click', goPrev);
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('view-swipe').classList.contains('active')) return;
+  if (e.key==='ArrowLeft')  goPrev();
+  if (e.key==='ArrowRight') goNext();
+});
+
+// Touch swipe
+let tx0=0, ty0=0, dragging=false;
+deckWrap.addEventListener('pointerdown', e=>{ tx0=e.clientX; ty0=e.clientY; dragging=true; deckWrap.setPointerCapture(e.pointerId); });
+deckWrap.addEventListener('pointermove', e=>{
+  if (!dragging) return;
+  const dx=e.clientX-tx0;
+  const top=deckWrap.querySelectorAll('.s-card')[cur];
+  if(top) top.style.transform=`translateY(0) scale(1) translateX(${dx}px) rotate(${dx*.03}deg)`;
+});
+deckWrap.addEventListener('pointerup', e=>{
+  if (!dragging) return; dragging=false;
+  const dx=e.clientX-tx0;
+  const top=deckWrap.querySelectorAll('.s-card')[cur];
+  if(top) top.style.transform='';
+  if (Math.abs(dx)>55) { dx<0 ? goNext() : goPrev(); }
+  else refreshDeck();
+});
+deckWrap.addEventListener('pointercancel', ()=>{
+  dragging=false;
+  const top=deckWrap.querySelectorAll('.s-card')[cur];
+  if(top) top.style.transform='';
+  refreshDeck();
+});
+
+/* ═══════════════════════════════════════
+   LIST VIEW
+═══════════════════════════════════════ */
+function buildList() {
+  const el = document.getElementById('up-list');
+  el.innerHTML = sorted.map(p => {
+    const col = colorFor(p.name);
+    const age = getAge(p.date);
+    const badge = p.days===0
+      ? `<span class="up-badge b-today">Hoy</span>`
+      : p.days<=7 ? `<span class="up-badge b-soon">En ${p.days}d</span>`
+      : `<span class="up-badge b-later">${fmtDate(p.date)}</span>`;
+    return `<div class="up-item">
+      <div class="up-av" style="background:${col}">${ini(p.name)}</div>
+      <div class="up-info">
+        <div class="up-name">${p.name}${age!==null?` <span class="up-age">cumple ${age}</span>`:''}</div>
+        <div class="up-nick">"${p.nickname}" · ${fmtDate(p.date)}</div>
+      </div>
+      ${badge}
+      <button class="up-msg-btn" onclick="openModal('${p.name}')" title="Ver mensaje">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════
+   CALENDAR VIEW
+═══════════════════════════════════════ */
+const DOW_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+/* Constructores reutilizables (panel destacado + modal) --------------- */
+// onClickAttr(name) devuelve el atributo onclick para abrir a una persona
+function miniCalCells(mi, year, onClickAttr) {
+  const now = new Date();
+  const entries = BIRTHDAYS
+    .filter(p => parseDate(p.date).month-1===mi)
+    .sort((a,b) => parseDate(a.date).day-parseDate(b.date).day);
+  const firstDay = new Date(year, mi, 1).getDay();
+  const daysInMonth = new Date(year, mi+1, 0).getDate();
+  const todayD = (now.getMonth()===mi && now.getFullYear()===year) ? now.getDate() : -1;
+
+  const bdayMap = {};
+  entries.forEach(p => { const d = parseDate(p.date).day; (bdayMap[d] = bdayMap[d]||[]).push(p); });
+
+  let cells = '';
+  for (let i=0; i<firstDay; i++) cells += `<div class="mini-day empty"></div>`;
+  for (let d=1; d<=daysInMonth; d++) {
+    const isTdy = d===todayD;
+    const hasBday = !!bdayMap[d];
+    const dotColor = hasBday ? colorFor(bdayMap[d][0].name) : '';
+    cells += `<div class="mini-day ${isTdy?'today':''} ${hasBday?'has-bday':''}"
+      ${hasBday?onClickAttr(bdayMap[d][0].name):''}>
+      <span class="mini-day-num">${d}</span>
+      ${hasBday?`<span class="bday-dot" style="background:${isTdy?'var(--bg)':dotColor}"></span>`:''}
+    </div>`;
+  }
+  return cells;
+}
+
+function monthListHTML(mi, year, onClickAttr) {
+  const entries = BIRTHDAYS
+    .filter(p => parseDate(p.date).month-1===mi)
+    .sort((a,b) => parseDate(a.date).day-parseDate(b.date).day);
+  if (!entries.length)
+    return `<div class="month-no-bdays">Sin cumpleaños en ${MONTHS_ES[mi]}</div>`;
+  return `<div class="month-bday-list">` + entries.map(p => {
+    const d    = parseDate(p.date).day;
+    const dow  = new Date(year, mi, d).getDay();
+    const col2 = colorFor(p.name);
+    const isTodayP = isToday(p.date);
+    const age  = getAge(p.date);
+    return `<div class="month-bday-row" ${onClickAttr(p.name)}>
+      <div class="mbr-av" style="background:${col2}">${ini(p.name)}</div>
+      <div class="mbr-info">
+        <div class="mbr-name">${p.name} <span style="font-size:.75rem;color:var(--fg-muted);font-weight:600">"${p.nickname}"</span></div>
+        <div class="mbr-date">${DOW_ES[dow]} ${d} de ${MONTHS_ES[mi]}${age!==null?` · cumple ${age}`:''}</div>
+      </div>
+      <span class="mbr-day-label" style="background:${col2}22;color:${col2}">
+        ${isTodayP ? '¡Hoy!' : DOW_ES[dow]}
+      </span>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+const dowHeaderHTML = DOW_ES.map(d => `<div class="mini-dow">${d}</div>`).join('');
+
+/* ═══════════════════════════════════════
+   CALENDAR VIEW: mes actual destacado + resto en grid
+═══════════════════════════════════════ */
+function buildCalendar() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const curMi = now.getMonth();
+
+  // ── Mes actual destacado (inline) ──
+  const col = PALETTE[curMi % PALETTE.length];
+  const openAttr = name => `onclick="openModal('${name}')"`;
+  document.getElementById('cal-featured').innerHTML = `
+    <div class="cal-featured">
+      <div class="cal-featured-head" style="background:${col}">
+        <div class="cf-left">
+          <span class="cal-featured-title">${MONTHS_ES[curMi]}</span>
+          <span class="cal-featured-year">${year}</span>
+        </div>
+        <span class="cal-featured-badge">Este mes</span>
+      </div>
+      <div class="mini-cal">
+        <div class="mini-cal-dow">${dowHeaderHTML}</div>
+        <div class="mini-cal-days">${miniCalCells(curMi, year, openAttr)}</div>
+      </div>
+      ${monthListHTML(curMi, year, openAttr)}
+    </div>`;
+
+  // ── Resto de meses en grid ──
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = MONTHS_ES.map((mon, mi) => {
+    if (mi === curMi) return '';            // el mes actual ya va arriba
+    const c = PALETTE[mi%PALETTE.length];
+    const entries = BIRTHDAYS
+      .filter(p => parseDate(p.date).month-1===mi)
+      .sort((a,b) => parseDate(a.date).day-parseDate(b.date).day);
+    const rows = entries.length
+      ? entries.map(p=>{
+          const age = getAge(p.date);
+          return `
+          <div class="cal-row">
+            <span class="cal-day" style="color:${c}">${String(parseDate(p.date).day).padStart(2,'0')}</span>
+            <span class="cal-pname">${p.name.split(' ')[0]}</span>
+            <span class="cal-pnick">${p.nickname!==p.name.split(' ')[0]?'"'+p.nickname+'"':''}</span>
+            ${age!==null?`<span class="cal-age">${age}</span>`:''}
+          </div>`;}).join('')
+      : `<div class="cal-empty">Sin cumpleaños</div>`;
+    return `
+    <div class="cal-month" data-mi="${mi}" onclick="openMonthModal(${mi})">
+      <div class="cal-head" style="background:${c}">
+        <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 100 8 4 4 0 000-8zm0 10c-4 0-8 2-8 4v1h16v-1c0-2-4-4-8-4z"/></svg>
+        ${mon.toUpperCase()}
+      </div>
+      <div class="cal-body">${rows}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════
+   MONTH MODAL (otros meses)
+═══════════════════════════════════════ */
+function openMonthModal(mi) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const col  = PALETTE[mi % PALETTE.length];
+
+  document.getElementById('mm-head').style.background = col;
+  document.getElementById('mm-title').textContent = MONTHS_ES[mi];
+  document.getElementById('mm-year').textContent  = year;
+  document.getElementById('mm-dow').innerHTML = dowHeaderHTML;
+
+  const openAttr = name =>
+    `onclick="event.stopPropagation();document.getElementById('month-modal').hidden=true;openModal('${name}')"`;
+  document.getElementById('mm-days').innerHTML = miniCalCells(mi, year, openAttr);
+  document.getElementById('mm-list').innerHTML = monthListHTML(mi, year, openAttr);
+
+  const overlay = document.getElementById('month-modal');
+  overlay.hidden = false;
+  if (typeof gsap !== 'undefined') {
+    gsap.fromTo('.month-modal', { y:40, opacity:0, scale:.96 },
+      { y:0, opacity:1, scale:1, duration:.35, ease:'back.out(1.5)' });
+  }
+}
+
+document.getElementById('mm-close').addEventListener('click', () => {
+  document.getElementById('month-modal').hidden = true;
+});
+document.getElementById('month-modal').addEventListener('click', e => {
+  if (e.target===document.getElementById('month-modal'))
+    document.getElementById('month-modal').hidden = true;
+});
+
+/* ═══════════════════════════════════════
+   TABS
+═══════════════════════════════════════ */
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+  });
+});
+
+/* ═══════════════════════════════════════
+   MODAL
+═══════════════════════════════════════ */
+let curP = null;
+function openModal(name) {
+  curP = BIRTHDAYS.find(p=>p.name===name);
+  if (!curP) return;
+  const col = colorFor(curP.name);
+  const msg = genMsg(curP);
+  document.getElementById('m-av').style.background = col;
+  document.getElementById('m-av').textContent = ini(curP.name);
+  document.getElementById('m-name').textContent = curP.name;
+  document.getElementById('m-sub').textContent  = `"${curP.nickname}" · ${fmtDate(curP.date)}`;
+  document.getElementById('m-msg').value = msg;
+  const wa = document.getElementById('btn-wa');
+  if (curP.phone) {
+    wa.href = `https://wa.me/${curP.phone}?text=${encodeURIComponent(msg)}`;
+    wa.style.display = '';
+  } else wa.style.display = 'none';
+  document.getElementById('modal').hidden = false;
+  if (typeof gsap !== 'undefined') {
+    gsap.fromTo('.modal', { y:60, opacity:0 }, { y:0, opacity:1, duration:.35, ease:'back.out(1.4)' });
+  }
+}
+document.getElementById('btn-cancel').onclick = () => document.getElementById('modal').hidden = true;
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target===document.getElementById('modal')) document.getElementById('modal').hidden = true;
+});
+document.getElementById('m-msg').addEventListener('input', () => {
+  if (!curP?.phone) return;
+  document.getElementById('btn-wa').href =
+    `https://wa.me/${curP.phone}?text=${encodeURIComponent(document.getElementById('m-msg').value)}`;
+});
+document.getElementById('btn-copy').onclick = async () => {
+  const btn = document.getElementById('btn-copy');
+  try {
+    await navigator.clipboard.writeText(document.getElementById('m-msg').value);
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Copiado`;
+  } catch {
+    document.getElementById('m-msg').select();
+    btn.innerHTML = '⚠️ Selecciona';
+  }
+  setTimeout(()=>{ btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copiar`; }, 2200);
+};
+
+/* tap banner para relanzar celebración */
+document.getElementById('bday-banner').addEventListener('click', () => {
+  stopCelebration(); setTimeout(launchCelebration, 100);
+});
+
+/* ═══════════════════════════════════════
+   RENDER + CARGA DE DATOS (data.json)
+═══════════════════════════════════════ */
+function renderData() {
+  computeSorted();
+  cur = 0;
+  buildBanner();
+  buildDeck();
+  buildList();
+  buildCalendar();
+}
+
+async function loadData() {
+  try {
+    const res = await fetch('./data.json', { cache: 'no-store' });
+    if (res.ok) return await res.json();
+  } catch {}
+  try { const r = await fetch('./data.json'); if (r.ok) return await r.json(); } catch {}
+  return [];
+}
+
+/* ═══════════════════════════════════════
+   ADMIN: edición vía API de GitHub
+═══════════════════════════════════════ */
+const GH = { owner: 'Devmiguelz', repo: 'birthdays', path: 'data.json', branch: 'main' };
+const TOKEN_KEY = 'gh_token_birthdays';
+
+const $ = id => document.getElementById(id);
+const getToken = () => { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; } };
+const setToken = t => { try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch {} };
+
+// base64 seguro para UTF-8 (acentos, emojis)
+const b64 = str => btoa(unescape(encodeURIComponent(str)));
+
+function adminStatus(msg, cls='') {
+  const el = $('admin-status');
+  el.textContent = msg; el.className = 'admin-status ' + cls;
+}
+
+async function ghGetSha(token) {
+  const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}?ref=${GH.branch}`,
+    { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } });
+  if (r.status === 404) return null;
+  if (r.status === 401) throw new Error('Token inválido o sin permiso.');
+  if (!r.ok) throw new Error('No se pudo leer el archivo (' + r.status + ').');
+  return (await r.json()).sha;
+}
+
+async function ghSave(token, arr) {
+  const sha = await ghGetSha(token);
+  const body = {
+    message: 'Actualiza cumpleaños desde la app',
+    content: b64(JSON.stringify(arr, null, 2) + '\n'),
+    branch: GH.branch
+  };
+  if (sha) body.sha = sha;
+  const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (r.status === 401 || r.status === 403) throw new Error('Token sin permiso de escritura.');
+  if (!r.ok) throw new Error('Error al guardar (' + r.status + ').');
+  return true;
+}
+
+/* ── Estado de cambios pendientes ── */
+const PENDING_KEY = 'pending_data_birthdays';
+let dirty = false;
+
+function savePending() { try { localStorage.setItem(PENDING_KEY, JSON.stringify(BIRTHDAYS)); } catch {} }
+function clearPending() { try { localStorage.removeItem(PENDING_KEY); } catch {} }
+
+// Aplica un cambio EN LOCAL (no sube nada hasta pulsar "Sincronizar")
+function applyChange(newArr) {
+  BIRTHDAYS = newArr;
+  dirty = true;
+  savePending();
+  renderData();
+  renderAdminList();
+  updateSyncBtn();
+}
+
+function updateSyncBtn() {
+  const btn = $('admin-sync-btn');
+  if (!btn) return;
+  btn.disabled = !(dirty && !!getToken());
+  $('admin-sync-dot').hidden = !dirty;
+  $('admin-sync-label').textContent = dirty ? 'Sincronizar cambios' : 'Sin cambios pendientes';
+}
+
+async function syncToData() {
+  const token = getToken();
+  if (!token) { adminStatus('Guarda tu token para sincronizar.', 'err'); return; }
+  if (!dirty) return;
+  adminStatus('Sincronizando…', 'wait');
+  $('admin-sync-btn').disabled = true;
+  try {
+    await ghSave(token, BIRTHDAYS);
+    dirty = false; clearPending(); updateSyncBtn();
+    adminStatus('✓ Sincronizado. Se publicará en ~1 min.', 'ok');
+  } catch (e) {
+    adminStatus('⚠️ ' + e.message, 'err'); updateSyncBtn();
+  }
+}
+$('admin-sync-btn').onclick = syncToData;
+
+/* ── Token UI ── */
+function updateTokenUI() {
+  const t = getToken();
+  const st = $('admin-token-status');
+  if (t) {
+    st.textContent = 'Conectado ✓'; st.className = 'admin-token-status ok';
+    $('admin-token-input').value = ''; $('admin-token-input').placeholder = 'Token guardado (pega otro para reemplazar)';
+    $('admin-token-clear').hidden = false;
+  } else {
+    st.textContent = 'Sin token — no podrás sincronizar'; st.className = 'admin-token-status off';
+    $('admin-token-clear').hidden = true;
+  }
+  updateSyncBtn();
+}
+
+$('admin-token-save').onclick = () => {
+  const v = $('admin-token-input').value.trim();
+  if (!v) { adminStatus('Pega un token.', 'err'); return; }
+  setToken(v); updateTokenUI(); adminStatus('Token guardado en este dispositivo.', 'ok');
+};
+$('admin-token-clear').onclick = () => {
+  setToken(''); updateTokenUI(); adminStatus('Token olvidado.', '');
+};
+
+/* ── Formulario (añadir / editar) ── */
+let editIndex = -1;
+
+function resetForm() {
+  editIndex = -1;
+  $('admin-form-title').textContent = 'Añadir persona';
+  $('f-name').value = ''; $('f-nick').value = ''; $('f-date').value = '';
+  $('f-phone').value = ''; $('f-noyear').checked = false;
+  $('admin-form-cancel').hidden = true;
+}
+
+function fillForm(i) {
+  const p = BIRTHDAYS[i];
+  editIndex = i;
+  $('admin-form-title').textContent = 'Editar: ' + p.name;
+  $('f-name').value = p.name;
+  $('f-nick').value = p.nickname || '';
+  $('f-phone').value = p.phone || '';
+  const d = parseDate(p.date);
+  if (d.year) { $('f-noyear').checked = false; $('f-date').value = p.date; }
+  else { $('f-noyear').checked = true; $('f-date').value = `2000-${String(d.month).padStart(2,'0')}-${String(d.day).padStart(2,'0')}`; }
+  $('admin-form-cancel').hidden = false;
+  $('admin-form').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function readForm() {
+  const name = $('f-name').value.trim();
+  if (!name) { adminStatus('El nombre es obligatorio.', 'err'); return null; }
+  const dval = $('f-date').value;
+  if (!dval) { adminStatus('La fecha es obligatoria.', 'err'); return null; }
+  const date = $('f-noyear').checked ? dval.slice(5) : dval;  // MM-DD o AAAA-MM-DD
+  return {
+    name,
+    nickname: $('f-nick').value.trim() || name.split(' ')[0],
+    date,
+    phone: $('f-phone').value.replace(/[^0-9]/g, '')
+  };
+}
+
+const PENDING_MSG = 'Cambio pendiente. Pulsa "Sincronizar cambios".';
+
+$('admin-form-save').onclick = () => {
+  const person = readForm();
+  if (!person) return;
+  const arr = BIRTHDAYS.slice();
+  if (editIndex >= 0) arr[editIndex] = person; else arr.push(person);
+  applyChange(arr);
+  resetForm();
+  adminStatus(PENDING_MSG, 'wait');
+};
+$('admin-form-cancel').onclick = resetForm;
+
+/* ── Lista admin ── */
+function renderAdminList() {
+  $('admin-list').innerHTML = BIRTHDAYS.map((p, i) => `
+    <div class="admin-row">
+      <div class="admin-row-av" style="background:${colorFor(p.name)}">${ini(p.name)}</div>
+      <div class="admin-row-info">
+        <div class="admin-row-name">${p.name}</div>
+        <div class="admin-row-sub">"${p.nickname}" · ${fmtDate(p.date)}</div>
+      </div>
+      <button class="admin-row-btn" data-edit="${i}" title="Editar">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
+      <button class="admin-row-btn del" data-del="${i}" title="Borrar">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>`).join('');
+}
+
+$('admin-list').addEventListener('click', e => {
+  const eBtn = e.target.closest('[data-edit]');
+  const dBtn = e.target.closest('[data-del]');
+  if (eBtn) { fillForm(+eBtn.dataset.edit); return; }
+  if (dBtn) {
+    const i = +dBtn.dataset.del;
+    if (confirm('¿Borrar a ' + BIRTHDAYS[i].name + '?')) {
+      const arr = BIRTHDAYS.slice(); arr.splice(i, 1);
+      applyChange(arr);
+      if (editIndex === i) resetForm();
+      adminStatus(PENDING_MSG, 'wait');
+    }
+  }
+});
+
+/* ── Abrir / cerrar admin ── */
+$('admin-fab').onclick = () => {
+  updateTokenUI(); renderAdminList(); resetForm();
+  adminStatus(dirty ? 'Tienes cambios sin sincronizar.' : '', dirty ? 'wait' : '');
+  $('admin-modal').hidden = false;
+  if (typeof gsap !== 'undefined') gsap.fromTo('.admin-box', { y:40, opacity:0 }, { y:0, opacity:1, duration:.3, ease:'back.out(1.3)' });
+};
+$('admin-close').onclick = () => { $('admin-modal').hidden = true; };
+$('admin-modal').addEventListener('click', e => {
+  if (e.target === $('admin-modal')) $('admin-modal').hidden = true;
+});
+
+/* ═══════════════════════════════════════
+   MOSTRAR / OCULTAR MODO ADMIN (solo tú)
+   · Teclado:  Ctrl + Shift + A
+   · Móvil:    5 toques en el logo de la cabecera
+═══════════════════════════════════════ */
+const UNLOCK_KEY = 'admin_unlocked';
+const isUnlocked = () => { try { return localStorage.getItem(UNLOCK_KEY) === '1'; } catch { return false; } };
+
+let toastT;
+function toast(msg) {
+  const el = $('admin-toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1600);
+}
+
+function setFab(on) {
+  $('admin-fab').classList.toggle('on', on);
+  try { on ? localStorage.setItem(UNLOCK_KEY, '1') : localStorage.removeItem(UNLOCK_KEY); } catch {}
+}
+function toggleAdmin() {
+  const on = !$('admin-fab').classList.contains('on');
+  setFab(on);
+  toast(on ? '🔓 Modo admin visible' : '🔒 Modo admin oculto');
+  if (!on) $('admin-modal').hidden = true;
+}
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+    e.preventDefault(); toggleAdmin();
+  }
+});
+
+let taps = [];
+const brand = document.querySelector('.header-brand');
+if (brand) brand.addEventListener('click', () => {
+  const now = Date.now();
+  taps = taps.filter(t => now - t < 2500);
+  taps.push(now);
+  if (taps.length >= 5) { taps = []; toggleAdmin(); }
+});
+
+/* ═══════════════════════════════════════
+   ARRANQUE
+═══════════════════════════════════════ */
+loadData().then(remote => {
+  const remoteArr = Array.isArray(remote) ? remote : [];
+  let pending = null;
+  try { const p = localStorage.getItem(PENDING_KEY); if (p) pending = JSON.parse(p); } catch {}
+  if (pending && Array.isArray(pending)) { BIRTHDAYS = pending; dirty = true; }
+  else { BIRTHDAYS = remoteArr; dirty = false; }
+  renderData();
+  if (isUnlocked()) $('admin-fab').classList.add('on');
+});

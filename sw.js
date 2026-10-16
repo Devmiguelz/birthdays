@@ -1,7 +1,7 @@
 /* Service worker de "Cumpleaños Familia"
    Cachea el app-shell para que funcione sin conexión tras la primera visita. */
-const CACHE = 'cumple-v4';
-const SHELL = ['./', './index.html', './styles.css', './data.json'];
+const CACHE = 'cumple-v5';
+const SHELL = ['./', './index.html', './styles.css', './app.js', './data.json'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();
