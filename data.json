@@ -1,10 +1,58 @@
 [
-  { "name": "Miguel Zambrano", "nickname": "Mono", "date": "1995-10-15", "phone": "573001234567", "relation": "yo" },
-  { "name": "Mamá", "nickname": "Mamá", "date": "1968-03-15", "phone": "", "relation": "madre" },
-  { "name": "Papá", "nickname": "Pacho", "date": "1965-06-22", "phone": "573109876543", "relation": "padre" },
-  { "name": "Esposa", "nickname": "Amor", "date": "1996-11-03", "phone": "573201234567", "relation": "pareja" },
-  { "name": "Laura Zambrano", "nickname": "Lau", "date": "1998-12-05", "phone": "", "relation": "hermana" },
-  { "name": "Carlos Herrera", "nickname": "Carlitos", "date": "1994-01-18", "phone": "573151234567", "relation": "primo" },
-  { "name": "Abuela Rosa", "nickname": "Abue", "date": "1945-07-30", "phone": "", "relation": "abuela" },
-  { "name": "Daniela Prado", "nickname": "Dani", "date": "2010-10-28", "phone": "573001119999", "relation": "sobrina" }
+  {
+    "name": "Miguel Zambrano",
+    "nickname": "Mono",
+    "date": "1995-10-14",
+    "phone": "573001234567",
+    "relation": "yo"
+  },
+  {
+    "name": "Mamá",
+    "nickname": "Mamá",
+    "date": "1968-03-15",
+    "phone": "",
+    "relation": "madre"
+  },
+  {
+    "name": "Papá",
+    "nickname": "Pacho",
+    "date": "1965-06-22",
+    "phone": "573109876543",
+    "relation": "padre"
+  },
+  {
+    "name": "Esposa",
+    "nickname": "Amor",
+    "date": "1996-11-03",
+    "phone": "573201234567",
+    "relation": "pareja"
+  },
+  {
+    "name": "Laura Zambrano",
+    "nickname": "Lau",
+    "date": "1998-12-05",
+    "phone": "",
+    "relation": "hermana"
+  },
+  {
+    "name": "Carlos Herrera",
+    "nickname": "Carlitos",
+    "date": "1994-01-18",
+    "phone": "573151234567",
+    "relation": "primo"
+  },
+  {
+    "name": "Abuela Rosa",
+    "nickname": "Abue",
+    "date": "1945-07-30",
+    "phone": "",
+    "relation": "abuela"
+  },
+  {
+    "name": "Daniela Prado",
+    "nickname": "Dani",
+    "date": "2010-10-28",
+    "phone": "573001119999",
+    "relation": "sobrina"
+  }
 ]
