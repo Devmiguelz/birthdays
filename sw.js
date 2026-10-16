@@ -1,6 +1,6 @@
 /* Service worker de "Cumpleaños Familia"
    Cachea el app-shell para que funcione sin conexión tras la primera visita. */
-const CACHE = 'cumple-v2';
+const CACHE = 'cumple-v3';
 const SHELL = ['./', './index.html', './data.json'];
 
 self.addEventListener('install', e => {
@@ -21,8 +21,13 @@ self.addEventListener('fetch', e => {
 
   const url = new URL(e.request.url);
 
-  // data.json: network-first (así los cambios se ven al recargar; cae a caché si no hay red)
-  if (url.pathname.endsWith('/data.json')) {
+  // HTML (navegación / index.html) y data.json: network-first.
+  // Así los cambios de código y de datos se ven al recargar; cae a caché sin red.
+  const isHTML = e.request.mode === 'navigate'
+    || url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
+  const isData = url.pathname.endsWith('/data.json');
+
+  if (isHTML || isData) {
     e.respondWith(
       fetch(e.request).then(res => {
         if (res && res.ok) {
@@ -30,12 +35,13 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
         }
         return res;
-      }).catch(() => caches.match(e.request).then(hit => hit || caches.match('./data.json')))
+      }).catch(() => caches.match(e.request).then(hit =>
+        hit || caches.match(isData ? './data.json' : './index.html')))
     );
     return;
   }
 
-  // Resto: cache-first
+  // Resto (CDN: three.js, gsap, fuentes): cache-first
   e.respondWith(
     caches.match(e.request).then(hit =>
       hit || fetch(e.request).then(res => {
