@@ -708,6 +708,7 @@ body {
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
   </svg>
 </button>
+<div id="admin-toast"></div>
 
 <!-- ADMIN MODAL -->
 <div class="overlay" id="admin-modal" hidden>
@@ -742,19 +743,6 @@ body {
         <label>Apodo<input type="text" id="f-nick" placeholder="Apodo"></label>
         <label>Fecha<input type="date" id="f-date"></label>
         <label>Teléfono<input type="text" id="f-phone" placeholder="57300... (opcional)"></label>
-        <label>Relación
-          <select id="f-relation">
-            <option value="default">Otro (genérico)</option>
-            <option value="yo">Yo</option>
-            <option value="madre">Madre</option>
-            <option value="padre">Padre</option>
-            <option value="pareja">Pareja</option>
-            <option value="hermana">Hermana/o</option>
-            <option value="primo">Primo/a</option>
-            <option value="abuela">Abuela/o</option>
-            <option value="sobrina">Sobrino/a</option>
-          </select>
-        </label>
         <label class="admin-noyear"><input type="checkbox" id="f-noyear"> Sin año (no mostrar edad)</label>
       </div>
       <div class="admin-form-btns">
@@ -766,6 +754,13 @@ body {
     <!-- List -->
     <div class="admin-list" id="admin-list"></div>
 
+    <!-- Sync -->
+    <div class="admin-sync">
+      <button class="mbt mbt-cp" id="admin-sync-btn" disabled>
+        <span id="admin-sync-dot" class="admin-sync-dot" hidden></span>
+        <span id="admin-sync-label">Sincronizar cambios</span>
+      </button>
+    </div>
     <div class="admin-status" id="admin-status"></div>
   </div>
 </div>
@@ -776,11 +771,29 @@ body {
   width: 52px; height: 52px; border-radius: 50%; z-index: 200;
   background: var(--c2); color: #fff; border: none; cursor: pointer;
   box-shadow: 0 6px 20px rgba(0,0,0,.35);
-  display: flex; align-items: center; justify-content: center;
+  display: none; align-items: center; justify-content: center;
   transition: transform .15s;
 }
+#admin-fab.on { display: flex; }
 #admin-fab:hover { transform: scale(1.08); }
 #admin-fab svg { width: 24px; height: 24px; }
+
+/* Toast de aviso al activar/ocultar modo admin */
+#admin-toast {
+  position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom,0px));
+  transform: translateX(-50%); z-index: 500;
+  background: var(--fg); color: var(--bg);
+  padding: 10px 18px; border-radius: 100px;
+  font-size: .82rem; font-weight: 800;
+  box-shadow: 0 6px 20px rgba(0,0,0,.4);
+  opacity: 0; transition: opacity .25s; pointer-events: none;
+}
+#admin-toast.show { opacity: 1; }
+
+.admin-sync { display: flex; justify-content: center; }
+#admin-sync-btn { font-size: .9rem; padding: 11px 20px; }
+#admin-sync-btn:disabled { opacity: .4; cursor: not-allowed; }
+.admin-sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #FFC107; display: inline-block; margin-right: 4px; }
 .admin-box { max-width: 520px; max-height: 88vh; overflow-y: auto; gap: 16px; }
 .admin-head { display: flex; align-items: center; justify-content: space-between; }
 .admin-head .modal-name { font-family: 'Fredoka One', cursive; font-size: 1.2rem; }
@@ -844,17 +857,7 @@ const DAYS_ES   = ['domingo','lunes','martes','miércoles','jueves','viernes','s
 // 'AAAA-MM-DD' (muestra la edad) o 'MM-DD' (sin año = sin edad).
 let BIRTHDAYS = [];
 
-const MSGS = {
-  yo:      (n,k) => `¡Feliz cumpleaños para mí, el ${k}! 🎂🥳 Este año va a ser épico. ¡A celebrar!`,
-  madre:   (n,k) => `Mamá, gracias por todo tu amor y dedicación. ¡Que este día esté lleno de alegría! Feliz cumpleaños ❤️`,
-  padre:   (n,k) => `Papá, eres un ejemplo para mí. ¡Feliz cumpleaños! Que la pases increíble hoy 🎉`,
-  pareja:  (n,k) => `Mi amor ${k} 💕, hoy es tu día especial. Que este cumpleaños sea tan bonito como tú. ¡Te amo mucho! 🎂`,
-  hermana: (n,k) => `¡Feliz cumpleaños ${k}! Espero que la pases súper bien hoy. ¡Un abrazo enorme! ❤️`,
-  primo:   (n,k) => `¡Primo ${k}! ¡Feliz cumple! Que todo lo bueno te llegue hoy y siempre 🍻🎂`,
-  abuela:  (n,k) => `${k}, eres lo más especial de la familia. ¡Muchas felicidades en tu día! Con todo mi amor 🌺`,
-  sobrina: (n,k) => `¡Feliz cumpleaños ${k}! Que este año esté lleno de logros y alegrías. ¡Un abrazo enorme! 🤗`,
-  default: (n,k) => `¡Hola ${k}! Hoy es tu día especial. ¡Feliz Cumpleaños! Que la pases genial 🎉`,
-};
+// Mensaje de felicitación genérico (ya no se usa "relación")
 
 /* ═══════════════════════════════════════
    HELPERS
@@ -896,7 +899,10 @@ function colorFor(name) {
   let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))&0xffff;
   return PALETTE[h%PALETTE.length];
 }
-function genMsg(p) { return (MSGS[p.relation]||MSGS.default)(p.name,p.nickname); }
+function genMsg(p) {
+  const k = p.nickname || p.name.split(' ')[0];
+  return `¡Feliz cumpleaños, ${k}! 🎂🎉 Te deseo un día increíble y un año lleno de cosas buenas. ¡Un abrazo enorme! ❤️`;
+}
 
 /* ═══════════════════════════════════════
    THREE.JS CONFETTI CELEBRATION
@@ -1480,38 +1486,60 @@ async function ghSave(token, arr) {
   return true;
 }
 
-async function commit(newArr) {
+/* ── Estado de cambios pendientes ── */
+const PENDING_KEY = 'pending_data_birthdays';
+let dirty = false;
+
+function savePending() { try { localStorage.setItem(PENDING_KEY, JSON.stringify(BIRTHDAYS)); } catch {} }
+function clearPending() { try { localStorage.removeItem(PENDING_KEY); } catch {} }
+
+// Aplica un cambio EN LOCAL (no sube nada hasta pulsar "Sincronizar")
+function applyChange(newArr) {
+  BIRTHDAYS = newArr;
+  dirty = true;
+  savePending();
+  renderData();
+  renderAdminList();
+  updateSyncBtn();
+}
+
+function updateSyncBtn() {
+  const btn = $('admin-sync-btn');
+  if (!btn) return;
+  btn.disabled = !(dirty && !!getToken());
+  $('admin-sync-dot').hidden = !dirty;
+  $('admin-sync-label').textContent = dirty ? 'Sincronizar cambios' : 'Sin cambios pendientes';
+}
+
+async function syncToData() {
   const token = getToken();
-  if (!token) { adminStatus('Primero guarda tu token.', 'err'); return; }
-  adminStatus('Guardando…', 'wait');
+  if (!token) { adminStatus('Guarda tu token para sincronizar.', 'err'); return; }
+  if (!dirty) return;
+  adminStatus('Sincronizando…', 'wait');
+  $('admin-sync-btn').disabled = true;
   try {
-    await ghSave(token, newArr);
-    BIRTHDAYS = newArr;
-    renderData();
-    renderAdminList();
-    resetForm();
-    adminStatus('✓ Guardado. Se publicará en ~1 min.', 'ok');
+    await ghSave(token, BIRTHDAYS);
+    dirty = false; clearPending(); updateSyncBtn();
+    adminStatus('✓ Sincronizado. Se publicará en ~1 min.', 'ok');
   } catch (e) {
-    adminStatus('⚠️ ' + e.message, 'err');
+    adminStatus('⚠️ ' + e.message, 'err'); updateSyncBtn();
   }
 }
+$('admin-sync-btn').onclick = syncToData;
 
 /* ── Token UI ── */
 function updateTokenUI() {
   const t = getToken();
   const st = $('admin-token-status');
   if (t) {
-    st.textContent = 'Conectado ✓ — modo edición'; st.className = 'admin-token-status ok';
+    st.textContent = 'Conectado ✓'; st.className = 'admin-token-status ok';
     $('admin-token-input').value = ''; $('admin-token-input').placeholder = 'Token guardado (pega otro para reemplazar)';
     $('admin-token-clear').hidden = false;
-    $('admin-form').classList.remove('admin-disabled');
-    $('admin-list').classList.remove('admin-disabled');
   } else {
-    st.textContent = 'Sin token — solo lectura'; st.className = 'admin-token-status off';
+    st.textContent = 'Sin token — no podrás sincronizar'; st.className = 'admin-token-status off';
     $('admin-token-clear').hidden = true;
-    $('admin-form').classList.add('admin-disabled');
-    $('admin-list').classList.add('admin-disabled');
   }
+  updateSyncBtn();
 }
 
 $('admin-token-save').onclick = () => {
@@ -1530,7 +1558,7 @@ function resetForm() {
   editIndex = -1;
   $('admin-form-title').textContent = 'Añadir persona';
   $('f-name').value = ''; $('f-nick').value = ''; $('f-date').value = '';
-  $('f-phone').value = ''; $('f-relation').value = 'default'; $('f-noyear').checked = false;
+  $('f-phone').value = ''; $('f-noyear').checked = false;
   $('admin-form-cancel').hidden = true;
 }
 
@@ -1541,7 +1569,6 @@ function fillForm(i) {
   $('f-name').value = p.name;
   $('f-nick').value = p.nickname || '';
   $('f-phone').value = p.phone || '';
-  $('f-relation').value = p.relation || 'default';
   const d = parseDate(p.date);
   if (d.year) { $('f-noyear').checked = false; $('f-date').value = p.date; }
   else { $('f-noyear').checked = true; $('f-date').value = `2000-${String(d.month).padStart(2,'0')}-${String(d.day).padStart(2,'0')}`; }
@@ -1559,18 +1586,20 @@ function readForm() {
     name,
     nickname: $('f-nick').value.trim() || name.split(' ')[0],
     date,
-    phone: $('f-phone').value.replace(/[^0-9]/g, ''),
-    relation: $('f-relation').value
+    phone: $('f-phone').value.replace(/[^0-9]/g, '')
   };
 }
 
+const PENDING_MSG = 'Cambio pendiente. Pulsa "Sincronizar cambios".';
+
 $('admin-form-save').onclick = () => {
-  if (!getToken()) { adminStatus('Primero guarda tu token.', 'err'); return; }
   const person = readForm();
   if (!person) return;
   const arr = BIRTHDAYS.slice();
   if (editIndex >= 0) arr[editIndex] = person; else arr.push(person);
-  commit(arr);
+  applyChange(arr);
+  resetForm();
+  adminStatus(PENDING_MSG, 'wait');
 };
 $('admin-form-cancel').onclick = resetForm;
 
@@ -1599,14 +1628,18 @@ $('admin-list').addEventListener('click', e => {
   if (dBtn) {
     const i = +dBtn.dataset.del;
     if (confirm('¿Borrar a ' + BIRTHDAYS[i].name + '?')) {
-      const arr = BIRTHDAYS.slice(); arr.splice(i, 1); commit(arr);
+      const arr = BIRTHDAYS.slice(); arr.splice(i, 1);
+      applyChange(arr);
+      if (editIndex === i) resetForm();
+      adminStatus(PENDING_MSG, 'wait');
     }
   }
 });
 
 /* ── Abrir / cerrar admin ── */
 $('admin-fab').onclick = () => {
-  updateTokenUI(); renderAdminList(); resetForm(); adminStatus('');
+  updateTokenUI(); renderAdminList(); resetForm();
+  adminStatus(dirty ? 'Tienes cambios sin sincronizar.' : '', dirty ? 'wait' : '');
   $('admin-modal').hidden = false;
   if (typeof gsap !== 'undefined') gsap.fromTo('.admin-box', { y:40, opacity:0 }, { y:0, opacity:1, duration:.3, ease:'back.out(1.3)' });
 };
@@ -1616,11 +1649,57 @@ $('admin-modal').addEventListener('click', e => {
 });
 
 /* ═══════════════════════════════════════
+   MOSTRAR / OCULTAR MODO ADMIN (solo tú)
+   · Teclado:  Ctrl + Shift + A
+   · Móvil:    5 toques en el logo de la cabecera
+═══════════════════════════════════════ */
+const UNLOCK_KEY = 'admin_unlocked';
+const isUnlocked = () => { try { return localStorage.getItem(UNLOCK_KEY) === '1'; } catch { return false; } };
+
+let toastT;
+function toast(msg) {
+  const el = $('admin-toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1600);
+}
+
+function setFab(on) {
+  $('admin-fab').classList.toggle('on', on);
+  try { on ? localStorage.setItem(UNLOCK_KEY, '1') : localStorage.removeItem(UNLOCK_KEY); } catch {}
+}
+function toggleAdmin() {
+  const on = !$('admin-fab').classList.contains('on');
+  setFab(on);
+  toast(on ? '🔓 Modo admin visible' : '🔒 Modo admin oculto');
+  if (!on) $('admin-modal').hidden = true;
+}
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+    e.preventDefault(); toggleAdmin();
+  }
+});
+
+let taps = [];
+const brand = document.querySelector('.header-brand');
+if (brand) brand.addEventListener('click', () => {
+  const now = Date.now();
+  taps = taps.filter(t => now - t < 2500);
+  taps.push(now);
+  if (taps.length >= 5) { taps = []; toggleAdmin(); }
+});
+
+/* ═══════════════════════════════════════
    ARRANQUE
 ═══════════════════════════════════════ */
-loadData().then(data => {
-  BIRTHDAYS = Array.isArray(data) ? data : [];
+loadData().then(remote => {
+  const remoteArr = Array.isArray(remote) ? remote : [];
+  let pending = null;
+  try { const p = localStorage.getItem(PENDING_KEY); if (p) pending = JSON.parse(p); } catch {}
+  if (pending && Array.isArray(pending)) { BIRTHDAYS = pending; dirty = true; }
+  else { BIRTHDAYS = remoteArr; dirty = false; }
   renderData();
+  if (isUnlocked()) $('admin-fab').classList.add('on');
 });
 </script>
 
