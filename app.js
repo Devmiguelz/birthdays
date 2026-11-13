@@ -76,6 +76,10 @@ const DAYS_ES   = ['domingo','lunes','martes','miércoles','jueves','viernes','s
 // Los cumpleaños viven en data.json (se cargan al iniciar). 'date' acepta
 // 'AAAA-MM-DD' (muestra la edad) o 'MM-DD' (sin año = sin edad).
 let BIRTHDAYS = [];
+// Estructura completa: [{ group, birthdays }]
+let ALL_GROUPS = [];
+// Grupo activo leído de ?cal=; null = todos
+let ACTIVE_GROUP = null;
 
 // Mensaje de felicitación genérico (ya no se usa "relación")
 
@@ -652,13 +656,23 @@ function renderData() {
   buildCalendar();
 }
 
+function normalizeGroups(raw) {
+  if (!Array.isArray(raw) || !raw.length) return [];
+  // Formato viejo: array plano de personas → envolver en grupo por defecto
+  if (raw[0] && raw[0].name) return [{ group: 'familia', birthdays: raw }];
+  return raw;
+}
+
 async function loadData() {
+  let raw;
   try {
     const res = await fetch('./data.json', { cache: 'no-store' });
-    if (res.ok) return await res.json();
+    if (res.ok) raw = await res.json();
   } catch {}
-  try { const r = await fetch('./data.json'); if (r.ok) return await r.json(); } catch {}
-  return [];
+  if (!raw) {
+    try { const r = await fetch('./data.json'); if (r.ok) raw = await r.json(); } catch {}
+  }
+  return normalizeGroups(raw);
 }
 
 /* ═══════════════════════════════════════
@@ -710,12 +724,16 @@ async function ghSave(token, arr) {
 const PENDING_KEY = 'pending_data_birthdays';
 let dirty = false;
 
-function savePending() { try { localStorage.setItem(PENDING_KEY, JSON.stringify(BIRTHDAYS)); } catch {} }
+function savePending() { try { localStorage.setItem(PENDING_KEY, JSON.stringify(ALL_GROUPS)); } catch {} }
 function clearPending() { try { localStorage.removeItem(PENDING_KEY); } catch {} }
 
 // Aplica un cambio EN LOCAL (no sube nada hasta pulsar "Sincronizar")
 function applyChange(newArr) {
   BIRTHDAYS = newArr;
+  if (ACTIVE_GROUP) {
+    const grp = ALL_GROUPS.find(g => g.group === ACTIVE_GROUP);
+    if (grp) grp.birthdays = newArr;
+  }
   dirty = true;
   savePending();
   renderData();
@@ -738,7 +756,7 @@ async function syncToData() {
   adminStatus('Sincronizando…', 'wait');
   $('admin-sync-btn').disabled = true;
   try {
-    await ghSave(token, BIRTHDAYS);
+    await ghSave(token, ALL_GROUPS);
     dirty = false; clearPending(); updateSyncBtn();
     adminStatus('✓ Sincronizado. Se publicará en ~1 min.', 'ok');
   } catch (e) {
@@ -825,6 +843,12 @@ $('admin-form-cancel').onclick = resetForm;
 
 /* ── Lista admin ── */
 function renderAdminList() {
+  if (!ACTIVE_GROUP) {
+    $('admin-list').innerHTML = '<div class="admin-no-group-msg">Selecciona un calendario para editar sus personas.</div>';
+    $('admin-form').style.display = 'none';
+    return;
+  }
+  $('admin-form').style.display = '';
   $('admin-list').innerHTML = BIRTHDAYS.map((p, i) => `
     <div class="admin-row">
       <div class="admin-row-av" style="background:${colorFor(p.name)}">${ini(p.name)}</div>
@@ -856,9 +880,56 @@ $('admin-list').addEventListener('click', e => {
   }
 });
 
+/* ── Gestión de grupos ── */
+function renderAdminGroups() {
+  const base = location.href.split('?')[0];
+  const rows = ALL_GROUPS.map(g => {
+    const url = `${base}?cal=${encodeURIComponent(g.group)}`;
+    const isActive = g.group === ACTIVE_GROUP;
+    return `<div class="admin-group-row${isActive ? ' active' : ''}">
+      <span class="admin-group-name">${g.group}</span>
+      <span class="admin-group-count">${g.birthdays.length} personas</span>
+      <div class="admin-group-actions">
+        ${isActive ? '<span class="admin-group-badge">activo</span>' : `<a class="mbt admin-group-open" href="${url}">Abrir</a>`}
+        <button class="mbt admin-group-copy-btn" onclick="copyGroupLink('${url}')">Copiar link</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  $('admin-groups').innerHTML = `
+    <div class="admin-section-title">Calendarios</div>
+    ${rows || '<div class="admin-no-groups">Sin calendarios aún.</div>'}
+    <div class="admin-new-group">
+      <input type="text" id="new-group-name" placeholder="Nombre del nuevo calendario (ej: trabajo)">
+      <button class="mbt mbt-cp" id="add-group-btn">+ Crear</button>
+    </div>`;
+
+  $('add-group-btn').onclick = addNewGroup;
+}
+
+function copyGroupLink(url) {
+  navigator.clipboard.writeText(url)
+    .then(() => toast('Link copiado'))
+    .catch(() => toast(url));
+}
+
+function addNewGroup() {
+  const raw = $('new-group-name').value.trim();
+  if (!raw) { adminStatus('Escribe un nombre para el calendario.', 'err'); return; }
+  const name = raw.toLowerCase().replace(/\s+/g, '-');
+  if (ALL_GROUPS.find(g => g.group === name)) { adminStatus('Ya existe un calendario con ese nombre.', 'err'); return; }
+  ALL_GROUPS.push({ group: name, birthdays: [] });
+  dirty = true;
+  savePending();
+  updateSyncBtn();
+  renderAdminGroups();
+  $('new-group-name').value = '';
+  adminStatus(`Calendario "${name}" creado. Sincroniza para guardarlo.`, 'wait');
+}
+
 /* ── Abrir / cerrar admin ── */
 $('admin-fab').onclick = () => {
-  updateTokenUI(); renderAdminList(); resetForm();
+  updateTokenUI(); renderAdminGroups(); renderAdminList(); resetForm();
   adminStatus(dirty ? 'Tienes cambios sin sincronizar.' : '', dirty ? 'wait' : '');
   $('admin-modal').hidden = false;
   if (typeof gsap !== 'undefined') gsap.fromTo('.admin-box', { y:40, opacity:0 }, { y:0, opacity:1, duration:.3, ease:'back.out(1.3)' });
@@ -912,12 +983,24 @@ if (brand) brand.addEventListener('click', () => {
 /* ═══════════════════════════════════════
    ARRANQUE
 ═══════════════════════════════════════ */
-loadData().then(remote => {
-  const remoteArr = Array.isArray(remote) ? remote : [];
+loadData().then(remoteGroups => {
   let pending = null;
-  try { const p = localStorage.getItem(PENDING_KEY); if (p) pending = JSON.parse(p); } catch {}
-  if (pending && Array.isArray(pending)) { BIRTHDAYS = pending; dirty = true; }
-  else { BIRTHDAYS = remoteArr; dirty = false; }
+  try { const p = localStorage.getItem(PENDING_KEY); if (p) pending = normalizeGroups(JSON.parse(p)); } catch {}
+  if (pending && pending.length) { ALL_GROUPS = pending; dirty = true; }
+  else { ALL_GROUPS = remoteGroups; dirty = false; }
+
+  ACTIVE_GROUP = new URLSearchParams(location.search).get('cal') || null;
+
+  if (ACTIVE_GROUP) {
+    const grp = ALL_GROUPS.find(g => g.group === ACTIVE_GROUP);
+    BIRTHDAYS = grp ? grp.birthdays.slice() : [];
+    const label = ACTIVE_GROUP.charAt(0).toUpperCase() + ACTIVE_GROUP.slice(1);
+    document.querySelector('.app-title').textContent = `Cumpleaños · ${label}`;
+    document.title = `Cumpleaños · ${label}`;
+  } else {
+    BIRTHDAYS = ALL_GROUPS.flatMap(g => g.birthdays);
+  }
+
   renderData();
   if (isUnlocked()) $('admin-fab').classList.add('on');
 });
